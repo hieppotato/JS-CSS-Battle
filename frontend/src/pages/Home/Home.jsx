@@ -1,6 +1,7 @@
 import React from 'react'
 
-const Home = () => {
+const Home = ({userInfo}) => {
+  // console.log("User Info in Home:", userInfo);
   return (
     <div className=''>Home</div>
   )
