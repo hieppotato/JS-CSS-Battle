@@ -78,11 +78,44 @@ app.post("/login", async (req, res) => {
     res.json({
       message: "Login successful",
       user: data.user,
+      session: data.session, 
     });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 });
+
+app.post("/logout", async (req, res) => {
+  try {
+    const { access_token } = req.body;
+    if (!access_token) {
+      return res.status(400).json({ error: "Missing access token" });
+    }
+
+    // Gọi Supabase để xoá session
+    const { error } = await supabase.auth.admin.signOut(access_token);
+
+    if (error) {
+      console.warn("⚠️ Supabase logout error:", error.message);
+      // Nếu token không hợp lệ hoặc đã hết hạn, coi như logout thành công
+      if (
+        error.message.includes("Invalid") ||
+        error.message.includes("expired") ||
+        error.message.includes("not found") || 
+        error.message.includes("missing")
+      ) {
+        return res.json({ message: "Already logged out (token invalid/expired)" });
+      }
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ message: "Logged out successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 
 app.get("/get-profile", async (req, res) => {
   try {
