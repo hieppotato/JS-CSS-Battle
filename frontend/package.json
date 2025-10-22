@@ -12,7 +12,8 @@
   "dependencies": {
     "@mantine/core": "^8.3.5",
     "@mantine/hooks": "^8.3.5",
-    "@supabase/supabase-js": "^2.75.1",
+    "@supabase/supabase-js": "^2.76.1",
+    "@tabler/icons-react": "^3.35.0",
     "@tailwindcss/vite": "^4.1.14",
     "axios": "^1.12.2",
     "react": "^19.1.1",

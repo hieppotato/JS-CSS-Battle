@@ -4,6 +4,8 @@ import axiosInstance from './utils/axiosInstance';
 
 import Home from './pages/Home/Home';
 import Login from './pages/Auth/Login';
+import CreateContest from './pages/Contest/CreateContest';
+import Contest from './pages/Contest/Contest';
 import { supabase } from "./utils/supabaseClient";
 import PrivateRoute from './components/PrivateRoute';
 
@@ -84,9 +86,11 @@ const fetchProfile = useCallback(async () => {
     <div>
       <Router>
         <Routes>
-          <Route path="/" element={<Home/>}/>
+          <Route path="/" element={<PrivateRoute><Home/></PrivateRoute>}/>
           <Route path="/home" element={<PrivateRoute><Home userInfo={userInfo}/></PrivateRoute>}/>
           <Route path="/login" element={<Login fetchProfile = {fetchProfile}/>}/>
+          <Route path="/create-contest" element={<PrivateRoute><CreateContest userInfo={userInfo}/></PrivateRoute>}/>
+          <Route path="/contest/:contestId" element={<PrivateRoute><Contest userInfo={userInfo}/></PrivateRoute>}/>
         </Routes>
       </Router>
     </div>
