@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, use } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 import ScorePopup from '../../components/ScorePopUp';
@@ -18,15 +18,12 @@ function EditorPanel({ value, onChange, language }) {
   );
 }
 
-function BuyImagePanel({ image, questionData, userInfo }) {
+function BuyImagePanel({ image, questionData, userInfo, setScoreFromServer }) {
+  const [isBought, setIsBought] = useState(false);
+  const [imgeUrl, setImageUrl] = useState(image || null);
 
-  // console.log('User info in BuyImagePanel:', userInfo);
-  // console.log('Question data in BuyImagePanel:', questionData);
-
-  const [isBought, setIsBought] = useState(userInfo?.images.includes(questionData.answer_css) || false);
-  const [imgeUrl, setImageUrl] = useState(image || "");
   const handleBuy = async () => {
-    try{
+    try {
       const response = await axiosInstance.put('/buy-image', {
         userId: userInfo?.id,
         imageCost: 2 * questionData?.difficulty,
@@ -35,101 +32,152 @@ function BuyImagePanel({ image, questionData, userInfo }) {
       });
       if (response.data) {
         setIsBought(true);
+        // server returns updated profile maybe inside response.data.profile or similar
+        const returnedPoint = response.data?.profile?.point ?? response.data?.point ?? null;
+        setScoreFromServer(returnedPoint);
         alert('Mua hình ảnh thành công!');
       } else {
-        alert('Mua hình ảnh thất bại: ' + (response.data.error || 'Lỗi không xác định'));
+        alert('Mua hình ảnh thất bại: ' + (response.data?.error || 'Lỗi không xác định'));
       }
     } catch (error) {
       console.error('Lỗi khi mua hình ảnh:', error);
-      alert('Lỗi khi mua hình ảnh: ' + error.message);
-
+      alert('Lỗi khi mua hình ảnh: ' + (error?.message || error));
     }
   };
 
   useEffect(() => {
-    setIsBought(userInfo?.images.includes(questionData?.answer_css) || false);
-    setImageUrl(questionData?.answer_css || "");
+    // safe-check images array (userInfo.images can be jsonb / array / undefined)
+    if (userInfo?.images && questionData?.answer_css) {
+      try {
+        const imgs = Array.isArray(userInfo.images)
+          ? userInfo.images
+          : typeof userInfo.images === 'string'
+          ? JSON.parse(userInfo.images)
+          : userInfo.images;
+        setIsBought(Array.isArray(imgs) && imgs.includes(questionData.answer_css));
+      } catch (e) {
+        setIsBought(false);
+      }
+    } else {
+      setIsBought(false);
+    }
+    setImageUrl(questionData?.answer_css || null);
   }, [userInfo, questionData]);
 
   return (
     <div className="p-4 border border-gray-300 rounded-lg bg-white h-full flex flex-col">
-      <img src={imgeUrl} alt="Hình ảnh gợi ý" className="mb-4 max-h-100 max-w-100" />
-      {isBought ? (
-        <div className="text-green-600 font-semibold">Bạn đã mua hình ảnh này.</div>  
-      ) : 
-      (<div><div className="text-gray-800">Mua hình ảnh để xem gợi ý thiết kế.</div>
-        <button
-          onClick={() => handleBuy()}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer"
-        >
-          Mua hình ảnh ({2 * questionData?.difficulty} điểm)
-        </button>
-      </div>
+      {isBought && imgeUrl && (
+        <img src={imgeUrl} alt="Hình ảnh gợi ý" className="mb-4 max-h-100 max-w-100" />
       )}
-      
+      {isBought ? (
+        <div className="text-green-600 font-semibold">Bạn đã mua hình ảnh này.</div>
+      ) : (
+        <div>
+          <div className="text-gray-800">Mua hình ảnh để xem gợi ý thiết kế.</div>
+          <button
+            onClick={() => handleBuy()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer"
+          >
+            Mua hình ảnh ({2 * (questionData?.difficulty || 0)} điểm)
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 function LiveHtmlPlayground({ questionId, userInfo }) {
-  const [showScorePopup, setShowScorePopup] = useState(true);
+  
   const [scoreFromServer, setScoreFromServer] = useState(null);
-
   const [html, setHtml] = useState('');
   const [css, setCss] = useState(
     'body {\n  font-family: sans-serif;\n  background-color: #f0f4f8;\n  color: #333;\n  padding: 1rem;\n}\n\nh1 {\n  color: #007bff;\n}'
   );
-  const [js, setJs] = useState(
-    '// Gõ code JavaScript ở đây\nconsole.log("Playground đã tải");\n'
-  );
+  const [js, setJs] = useState('// Gõ code JavaScript ở đây\nconsole.log("Playground đã tải");\n');
 
   const [srcDoc, setSrcDoc] = useState('');
   const [questionData, setQuestionData] = useState(null);
   const [saveStatus, setSaveStatus] = useState(''); // '', 'saving', 'saved', 'error'
   const [lastSavedHtml, setLastSavedHtml] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // tab index: 0 = HTML, 1 = CSS, 2 = JS
+  // tab index: 0 = HTML, 1 = CSS, 2 = JS, 3 = Image
   const [activeTab, setActiveTab] = useState(0);
 
-  // Fetch question template + latest saved code
+  // Fetch question template + latest saved code together to avoid race
   useEffect(() => {
-    const fetchQuestions = async (id) => {
-      if (!id) return;
-      try {
-        const response = await axiosInstance.get(`/questions/${id}`);
-        setQuestionData(response.data);
-        // console.log('Fetched question data:', response.data);
-        if (!lastSavedHtml) {
-          setHtml(response.data.template_html || '');
-        }
-      } catch (error) {
-        console.error('Error fetching question data:', error);
-      }
-    };
-
-    const fetchSavedCode = async (question_id, user_id) => {
-      if (!question_id || !user_id) return;
-      try {
-        const response = await axiosInstance.get('/saved_code', {
-          params: { question_id, user_id },
-        });
-        if (response.data && response.data.saved_html) {
-          setHtml(response.data.saved_html);
-          setLastSavedHtml(response.data.saved_html);
-        }
-      } catch (error) {
-        console.error('Error fetching saved code:', error);
-      }
-    };
-
+    const controller = new AbortController();
     const qid = questionId?.contestId;
     const uid = userInfo?.id || userInfo?.userId || userInfo?._id;
-    fetchQuestions(qid);
-    fetchSavedCode(qid, uid);
-    setScoreFromServer(userInfo?.point ?? userInfo?.score ?? null);
+
+    const fetchBoth = async () => {
+      setLoading(true);
+      try {
+        // if no qid, nothing to fetch
+        if (!qid) {
+          setLoading(false);
+          return;
+        }
+
+        // start both requests in parallel
+        const questionPromise = axiosInstance.get(`/questions/${qid}`, {
+          signal: controller.signal,
+        });
+
+        const savedPromise = uid
+          ? axiosInstance.get('/saved_code', {
+              params: { question_id: qid, user_id: uid },
+              signal: controller.signal,
+            })
+          : Promise.resolve({ data: null });
+
+        const [questionRes, savedRes] = await Promise.all([questionPromise, savedPromise]);
+
+        if (controller.signal.aborted) return;
+
+        const qData = questionRes?.data ?? null;
+        setQuestionData(qData);
+
+        // decide which html to use: saved has priority (even empty string is valid)
+        const saved_html =
+          savedRes?.data && (typeof savedRes.data === 'object') ? savedRes.data.saved_html : null;
+
+        if (saved_html !== null && saved_html !== undefined) {
+          // saved exists (could be empty string) -> use it
+          setHtml(saved_html);
+          setLastSavedHtml(saved_html);
+        } else {
+          // fallback to template_html (may be undefined -> default '')
+          const template = qData?.template_html ?? '';
+          setHtml(template);
+          // lastSavedHtml stays null (meaning no saved version)
+          setLastSavedHtml(null);
+        }
+
+        // optionally prefill css/js from question if present (keep existing defaults if not)
+        if (qData?.template_css) setCss(qData.template_css);
+        if (qData?.template_js) setJs(qData.template_js);
+
+        // set score from userInfo snapshot (if any)
+        setScoreFromServer(userInfo?.point ?? userInfo?.score ?? null);
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          console.error('Error fetching question/saved:', err);
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
+    fetchBoth();
+
+    return () => {
+      controller.abort();
+    };
+    // include userInfo id because saved_code depends on it
   }, [questionId?.contestId, userInfo?.id, userInfo?.userId, userInfo?._id]); // eslint-disable-line
 
-  // Preview iframe
+  // Preview iframe (debounced)
   useEffect(() => {
     const timeout = setTimeout(() => {
       setSrcDoc(`
@@ -169,13 +217,16 @@ function LiveHtmlPlayground({ questionId, userInfo }) {
       setSaveStatus('saving');
       try {
         const res = await axiosInstance.post('/saved_code', payload);
-        setSaveStatus('saved');
-        setLastSavedHtml(html);
+        // prefer server-returned saved_html if provided; otherwise use current html
+        const serverSavedHtml = res?.data?.saved_html;
+        const newSavedHtml = serverSavedHtml !== undefined ? serverSavedHtml : html;
 
-        // nếu server trả điểm thì show popup với điểm đó
+        setSaveStatus('saved');
+        setLastSavedHtml(newSavedHtml);
+
+        // if server returns updated point or score, use it
         const score = res?.data?.score ?? userInfo?.point ?? userInfo?.score ?? null;
         setScoreFromServer(score);
-        setShowScorePopup(true);
 
         setTimeout(() => setSaveStatus(''), 1800);
         return { ok: true, data: res.data };
@@ -189,7 +240,7 @@ function LiveHtmlPlayground({ questionId, userInfo }) {
     [html, questionId?.contestId, userInfo]
   );
 
-  // Ctrl/Cmd + S listener
+  // Ctrl/Cmd + S listener and Ctrl+1/2/3 for tab switching
   useEffect(() => {
     const onKeyDown = async (e) => {
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -198,12 +249,10 @@ function LiveHtmlPlayground({ questionId, userInfo }) {
       if (ctrlOrCmd && e.key.toLowerCase() === 's') {
         e.preventDefault();
         e.stopPropagation();
-
         await saveCode();
       }
 
-      // optionally switch tab with Ctrl+1/2/3
-      if (ctrlOrCmd && e.key >= '1' && e.key <= '3') {
+      if (ctrlOrCmd && e.key >= '1' && e.key <= '4') {
         const idx = Number(e.key) - 1;
         setActiveTab(idx);
       }
@@ -216,6 +265,7 @@ function LiveHtmlPlayground({ questionId, userInfo }) {
   }, [saveCode]);
 
   const isDirty = useMemo(() => {
+    // if lastSavedHtml is null => no saved version exists; consider dirty only if html differs from template default
     if (lastSavedHtml === null) {
       return html !== '';
     }
@@ -250,7 +300,6 @@ function LiveHtmlPlayground({ questionId, userInfo }) {
     </div>
   );
 
-  // Tab labels
   const tabs = [
     { id: 'html', label: 'HTML' },
     { id: 'css', label: 'CSS' },
@@ -269,84 +318,91 @@ function LiveHtmlPlayground({ questionId, userInfo }) {
               key={t.id}
               onClick={() => setActiveTab(idx)}
               className={`flex items-center gap-2 px-4 py-2 focus:outline-none ${
-                activeTab === idx
-                  ? 'bg-gray-800 text-white'
-                  : 'bg-gray-900 text-gray-300 hover:bg-gray-800'
+                activeTab === idx ? 'bg-gray-800 text-white' : 'bg-gray-900 text-gray-300 hover:bg-gray-800'
               }`}
               aria-pressed={activeTab === idx}
               aria-controls={`editor-panel-${t.id}`}
             >
               <span className="font-mono text-xs tracking-wider">{t.label}</span>
-              {/* show indicator only on HTML label */}
               {t.id === 'html' && <span className="ml-2">{indicator}</span>}
             </button>
           ))}
-          {/* spacer + small save hint */}
           <div className="ml-auto pr-3 text-xs text-gray-400 hidden sm:block">
             Nhấn <kbd className="px-1 py-0.5 border rounded bg-black/20">Ctrl/Cmd</kbd> + <kbd className="px-1 py-0.5 border rounded bg-black/20">S</kbd> để lưu
           </div>
         </div>
 
         {/* Editor area with slide */}
-          <div className="relative flex-1 bg-white border border-t-0 rounded-b-lg overflow-hidden">
-            {/* IMPORTANT: container width = 300% (3 panels), panels each w-full
-                We must translate by 0%, 100%, 200% accordingly. */}
-            <div
-              className="flex h-full w-[300%] transition-transform duration-300 ease-out"
-              style={{ transform: `translateX(-${activeTab * 100}%)` }}
-              aria-live="polite"
-            >
-              {/* each panel takes 1/3 of the wide container; because container is 300% and each child is w-full,
-                  each child will equal 100% of the viewport area (one panel visible at a time) */}
-              <div id="editor-panel-html" className="flex-shrink-0 w-full p-2 h-full">
-                <div className="h-full flex flex-col">
-                  <div className="flex-1">
+        <div className="relative flex-1 bg-white border border-t-0 rounded-b-lg overflow-hidden">
+          <div
+            className="flex h-full w-[400%] transition-transform duration-300 ease-out"
+            style={{ transform: `translateX(-${activeTab * 100}%)` }}
+            aria-live="polite"
+          >
+            <div id="editor-panel-html" className="flex-shrink-0 w-full p-2 h-full">
+              <div className="h-full flex flex-col">
+                <div className="flex-1">
+                  {/* show skeleton while loading to avoid flicker */}
+                  {loading ? (
+                    <div className="h-full w-full animate-pulse bg-gray-50 border border-gray-200 rounded" />
+                  ) : (
                     <EditorPanel value={html} onChange={setHtml} language="html" />
-                  </div>
-                  <div className="mt-2 text-xs text-gray-600">
-                    <span className="mr-2">HTML</span>
-                    {isDirty ? <span className="text-red-600">Có thay đổi chưa lưu</span> : <span>Đã lưu</span>}
-                  </div>
+                  )}
+                </div>
+                <div className="mt-2 text-xs text-gray-600">
+                  <span className="mr-2">HTML</span>
+                  {isDirty ? <span className="text-red-600">Có thay đổi chưa lưu</span> : <span>Đã lưu</span>}
                 </div>
               </div>
+            </div>
 
-              <div id="editor-panel-css" className="flex-shrink-0 w-full p-2 h-full">
-                <div className="h-full flex flex-col">
-                  <div className="flex-1">
+            <div id="editor-panel-css" className="flex-shrink-0 w-full p-2 h-full">
+              <div className="h-full flex flex-col">
+                <div className="flex-1">
+                  {loading ? (
+                    <div className="h-full w-full animate-pulse bg-gray-50 border border-gray-200 rounded" />
+                  ) : (
                     <EditorPanel value={css} onChange={setCss} language="css" />
-                  </div>
-                  <div className="mt-2 text-xs text-gray-600">
-                    <span className="mr-2">CSS</span>
-                  </div>
+                  )}
+                </div>
+                <div className="mt-2 text-xs text-gray-600">
+                  <span className="mr-2">CSS</span>
                 </div>
               </div>
+            </div>
 
-              <div id="editor-panel-js" className="flex-shrink-0 w-full p-2 h-full">
-                <div className="h-full flex flex-col">
-                  <div className="flex-1">
+            <div id="editor-panel-js" className="flex-shrink-0 w-full p-2 h-full">
+              <div className="h-full flex flex-col">
+                <div className="flex-1">
+                  {loading ? (
+                    <div className="h-full w-full animate-pulse bg-gray-50 border border-gray-200 rounded" />
+                  ) : (
                     <EditorPanel value={js} onChange={setJs} language="javascript" />
-                  </div>
-                  <div className="mt-2 text-xs text-gray-600">
-                    <span className="mr-2">JavaScript</span>
-                  </div>
+                  )}
+                </div>
+                <div className="mt-2 text-xs text-gray-600">
+                  <span className="mr-2">JavaScript</span>
                 </div>
               </div>
+            </div>
 
-              <div id="editor-panel-image" className="flex-shrink-0 w-full p-2 h-full">
-                <div className="h-full flex flex-col">
-                  <div className="flex-1">
-                    <BuyImagePanel image={questionData?.answer_css} questionData={questionData} userInfo={userInfo} />
-                  </div>
-                  <div className="mt-2 text-xs text-gray-600">
-                    <span className="mr-2">Hình ảnh gợi ý</span>
-                  </div>
+            <div id="editor-panel-image" className="flex-shrink-0 w-full p-2 h-full">
+              <div className="h-full flex flex-col">
+                <div className="flex-1">
+                  <BuyImagePanel
+                    image={questionData?.answer_css}
+                    questionData={questionData}
+                    userInfo={userInfo}
+                    setScoreFromServer={(e) => setScoreFromServer(e)}
+                  />
+                </div>
+                <div className="mt-2 text-xs text-gray-600">
+                  <span className="mr-2">Hình ảnh gợi ý</span>
                 </div>
               </div>
-
-              
             </div>
           </div>
-
+        </div>
 
         {/* small status row */}
         <div className="mt-2 text-sm text-gray-600">
@@ -362,13 +418,13 @@ function LiveHtmlPlayground({ questionId, userInfo }) {
       <div className="w-full md:w-1/2 h-1/2 md:h-full p-2">
         <div className="w-full h-full bg-white rounded-lg shadow-md border border-gray-300 overflow-hidden">
           <div className="flex h-full">
-            {/* result / console header imitation */}
             <div className="w-1/10 bg-gray-100 border-r border-gray-200 p-2 hidden md:flex items-center justify-center text-sm text-gray-600">
               Result
             </div>
             <div className="flex-1 p-2">
+              {/* only render iframe when srcDoc is ready to avoid flicker */}
               <iframe
-                srcDoc={srcDoc}
+                srcDoc={srcDoc || '<!doctype html>'}
                 title="Preview"
                 sandbox="allow-scripts"
                 className="w-full h-full bg-white rounded-lg"
@@ -382,7 +438,6 @@ function LiveHtmlPlayground({ questionId, userInfo }) {
       <ScorePopup
         visible={true}
         score={scoreFromServer ?? userInfo?.point ?? userInfo?.score ?? '—'}
-        onClose={() => setShowScorePopup(false)}
         position="bottom-right"
         showBackdrop={false}
         size="md"

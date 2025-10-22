@@ -329,6 +329,12 @@ app.put("/buy-image", async (req, res) => {
       // const row = Array.isArray(data) ? data[0] : data;
       // console.log(row.out_id, row.out_point, row.out_images);
 
+      const {user_point, out_error} = await supabase
+      .from('profiles')
+      .select('point')
+      .eq('id', userId)
+      .maybeSingle();
+
     if (error) {
       if (error.message && error.message.includes('insufficient_points_or_not_found')) {
         return res.status(400).json({ error: "Không đủ điểm để mua" });
@@ -337,10 +343,14 @@ app.put("/buy-image", async (req, res) => {
       return res.status(500).json({ error: "Server error" });
     }
 
+    // console.log('Buy image RPC result:', user_point);
+
     const updated = Array.isArray(data) ? data[0] : data;
+    // console.log('Buy image successful, updated user:', updated);
     return res.json({
       message: "Mua ảnh thành công",
-      user: updated
+      user: updated,
+      point: updated?.remaining_points || 0
     });
 
   } catch (err) {
