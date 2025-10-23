@@ -65,9 +65,6 @@ app.post("/profile-update", async (req, res) => {
 // ---------------- LOGIN ----------------
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  console.log('supabase', Object.keys(supabase || {}));
-  console.log('supabase.auth', supabase && supabase.auth, typeof supabase?.auth);
-
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -389,6 +386,220 @@ app.put("/approve-submission", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/save-puzzle", async (req, res) => {
+  try {
+    const { answers, vword } = req.body;
+    if (!answers || !vword) {
+      return res.status(400).json({ error: "Missing parameters" });
+    }
+    const { data, error } = await supabase
+      .from("puzzles")
+      .insert([{ answers, vword }])
+      .select()
+      .maybeSingle();
+    if (error) throw error;
+    res.status(201).json({ message: "Puzzle saved", data: data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.get("/puzzles/:id", async (req, res) => {
+  try {
+    const id = req.params.id; 
+    const { data, error } = await supabase
+      .from("puzzles")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: "Puzzle not found" });
+    // console.log(typeof data.vword);
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.get('/puzzles', async (req, res) => {
+  try {
+    const { data, error } = await supabase  
+      .from('puzzles')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) { throw error; }
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/approve-buy-hint', async (req, res) => {
+  try {
+    const { requestId, userId, hintCost, questionId } = req.body;
+    if (!requestId) {
+      return res.status(400).json({ error: "Missing requestId" });
+    }
+
+    const { data, error } = await supabase
+      .rpc('buy_hint_rpc', {
+        p_user_id: userId,
+        p_image_id: questionId,
+        p_image_cost: Number(hintCost)
+      });
+    if (error) throw error;
+
+    const updated = Array.isArray(data) ? data[0] : data;
+    const { data: request, error: requestError } = await supabase
+      .from("requests")
+      .update({ status: 'approved' })
+      .eq("id", requestId)
+      .select()
+      .maybeSingle();
+    if (requestError) throw requestError;
+    res.json({ message: "Hint purchase approved", request, updated });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post('/request-buy-hint', async (req, res) => {
+  try {
+    const { userId, rowId, hintCost } = req.body;
+    if (!userId || rowId == null) {
+      return res.status(400).json({ error: "Missing parameters" });
+    }
+    const { data, error } = await supabase
+      .from('requests')
+      .insert([{ userId, questionId: rowId, type: 'buy_hint', status: 'pending', hintCost }])
+      .select()
+      .maybeSingle();
+    if (error) throw error;
+    res.status(201).json({ message: 'Request created', request: data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/update-user-point', async (req, res) => {
+  try {
+    const { userId, points } = req.body;
+    if (!userId || points == null) {
+      return res.status(400).json({ error: "Missing parameters" });
+    } 
+
+    // Lấy điểm hiện tại
+    const { data: user, error: selectError } = await supabase
+      .from('profiles')
+      .select('point')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (selectError) throw selectError;
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Cộng điểm
+    const newPoint = (user.point || 0) + Number(points);
+
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('profiles')
+      .update({ point: newPoint })
+      .eq('id', userId)
+      .select()
+      .maybeSingle();
+
+    if (updateError) throw updateError;
+
+    res.json({ message: 'User points updated', user: updatedUser });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// routes.js (Express)
+app.post('/complete-row', async (req, res) => {
+  try {
+    const { userId, puzzleId, rowIndex, reward = 10 } = req.body;
+    if (!userId || puzzleId == null || rowIndex == null) {
+      return res.status(400).json({ error: 'Missing parameters' });
+    }
+
+    // 1) Try insert into completed_rows
+    const insertResp = await supabase
+      .from('completed_rows')
+      .insert({ user_id: userId, puzzle_id: puzzleId, row_index: rowIndex })
+      .select()
+      .maybeSingle();
+
+    // If insertResp.error exists, check if it's duplicate key error
+    if (insertResp.error) {
+      // Duplicate or other error
+      const errMessage = insertResp.error.message || '';
+      // Postgres duplicate key typically returns "duplicate key value"
+      if (errMessage.includes('duplicate key')) {
+        // already completed previously -> idempotent
+        return res.json({ message: 'Already completed', already: true });
+      } else {
+        console.error('Insert completed_rows error', insertResp.error);
+        return res.status(500).json({ error: 'DB error inserting completed_rows' });
+      }
+    }
+
+    // 2) Insert succeeded (new completion) => award points
+    // Get current point
+    const sel = await supabase
+      .from('profiles')
+      .select('point')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (sel.error) throw sel.error;
+    const current = (sel.data?.point || 0);
+    const newPoint = current + Number(reward);
+
+    const upd = await supabase
+      .from('profiles')
+      .update({ point: newPoint })
+      .eq('id', userId)
+      .select()
+      .maybeSingle();
+
+    if (upd.error) throw upd.error;
+
+    return res.json({ message: 'Row completed, points awarded', points: newPoint, completed: insertResp.data });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/user-completed-rows', async (req, res) => {
+  try {
+    const { userId, puzzleId } = req.query;
+    if (!userId || !puzzleId) return res.status(400).json({ error: 'Missing params' });
+
+    const { data, error } = await supabase
+      .from('completed_rows')
+      .select('row_index')
+      .eq('user_id', userId)
+      .eq('puzzle_id', puzzleId);
+
+    if (error) throw error;
+    // return array of row_index values
+    const rows = (data || []).map(r => Number(r.row_index));
+    res.json({ completedRows: rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

@@ -4,31 +4,29 @@ import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
   const navigate = useNavigate();
-  const [questions, setQuestions] = useState([]);
+  const [puzzles, setPuzzles] = useState([]);
 
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      try {   
-        const res = await axiosInstance.get(`/questions`);
-        setQuestions(res.data);
-      }
-      catch (error) {
-        console.error("Error fetching questions:", error);
-      }
+  useEffect(() => { 
+    const fetchPuzzles = async () => {
+      try {
+        const response = await axiosInstance.get('/puzzles');
+        setPuzzles(response.data);
+        console.log('Puzzles fetched:', response.data);
+      } catch (error) {
+        console.error('Error fetching puzzles:', error);
+      } 
     };
-    fetchQuestions();
+
+    fetchPuzzles();
   }, []);
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Danh sách câu hỏi</h1>
+      <h1 className='text-white'>Available Puzzles</h1>
       <ul>
-        {questions.map((question) => (  
-          <li key={question.id} className="mb-2 p-4 border rounded-lg hover:shadow-lg cursor-pointer">
-            <h2 className="text-xl font-semibold">{question.title}</h2>
-            <p className="text-gray-600" onClick={() => navigate(`/contest/${question.id}`)}>ID: {question.id}</p>
-            <div className="mt-2">  
-            </div>
+        {puzzles.map((puzzle) => (
+          <li key={puzzle.id}>
+            <button className='text-white cursor-pointer' onClick={() => navigate(`/puzzle-game/${puzzle.id}`)}>Play Puzzle</button>
           </li>
         ))}
       </ul>

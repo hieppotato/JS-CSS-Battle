@@ -6,8 +6,10 @@ import Home from './pages/Home/Home';
 import Login from './pages/Auth/Login';
 import CreateContest from './pages/Contest/CreateContest';
 import Contest from './pages/Contest/Contest';
+import PuzzleGame from "./pages/PuzzleGame/PuzzleGame";
 import { supabase } from "./utils/supabaseClient";
 import PrivateRoute from './components/PrivateRoute';
+import CreatePuzzle from "./pages/PuzzleGame/CreatePuzzle";
 
 const App = () => {
 
@@ -91,6 +93,8 @@ const fetchProfile = useCallback(async () => {
           <Route path="/login" element={<Login fetchProfile = {fetchProfile}/>}/>
           <Route path="/create-contest" element={<PrivateRoute><CreateContest userInfo={userInfo}/></PrivateRoute>}/>
           <Route path="/contest/:contestId" element={<PrivateRoute><Contest userInfo={userInfo}/></PrivateRoute>}/>
+          <Route path="/puzzle-game/:id" element={<PrivateRoute><PuzzleGame userInfo={userInfo}/></PrivateRoute>}/>
+          <Route path="/create-puzzle" element={<CreatePuzzle/>} />
         </Routes>
       </Router>
     </div>
