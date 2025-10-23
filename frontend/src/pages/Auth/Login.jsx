@@ -35,18 +35,48 @@ const Login = ({fetchProfile}) => {
   }, [navigate]);
 
   return (
-    <>
-    <div className='flex lexend justify-center items-center h-screen'>
-      <div className='w-96 p-6 border rounded-lg shadow-lg'>
-        <h2 className='text-2xl font-bold mb-4 text-center'>Login</h2>
-        <input type="email" placeholder='Email' className='w-full p-2 mb-4 border rounded' value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input type="password" placeholder='Password' className='w-full p-2 mb-4 border rounded' value={password} onChange={(e) => setPassword(e.target.value)} />
-        <button className='w-full bg-blue-500 text-white p-2 rounded cursor-pointer' onClick={handleLogin}> Login </button>
-        {error && <p className="text-red-500 text-xs pb-1">{error}</p>}
-        <p className='mt-4 text-center'>Don't have an account? <span className='text-blue-500 cursor-pointer' onClick={() => navigate('/signup')}>Sign Up</span></p>
+    <div className={classes.loginWrapper}>
+      <div className={classes.header}>
+        <h1 className={classes.title}>Welcome back!</h1>
+      </div>
+      <div className={classes.formContainer}>
+          <div className={classes.inputGroup}>
+            <label htmlFor="email">Email *</label>
+            <input
+              type="email"
+              id="email"
+              placeholder="you@example.dev"
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div className={classes.inputGroup}>
+            <label htmlFor="password">Password *</label>
+            <div className={classes.passwordWrapper}>
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Your password"
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+            </div>
+          </div>
+
+          <div className={classes.options}>
+            <div className={classes.rememberMe}>
+              <input className='cursor-pointer' type="checkbox" id="remember" />
+              <label className='cursor-pointer' htmlFor="remember">Remember me</label>
+            </div>
+          </div>
+
+          <button className={classes.signInButton} onClick={handleLogin}>
+            Sign in
+          </button>
+          {error && <p className={classes.errorMessage}>{error}</p>}
       </div>
     </div>
-    </>
   )
 }
 
