@@ -4,7 +4,7 @@ import { stopTimerHandler } from '../scripts/timer-crossword';
 import axiosInstance from '../utils/axiosInstance';
 
 // DrawCrossword component renders the crossword puzzle form.
-export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, puzzleId, userInfo }) => {
+export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, puzzleId, userInfo, setScoreFromServer }) => {
   const { colors, timerRef, setTimerRef } = useContext(AppContext);
   const { getPuzzleById, loadingPuzzles, puzzlesError } = useContext(AppContext);
   // console.log("userInfo :",userInfo);
@@ -89,59 +89,92 @@ export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, p
     // reset correctness array
     setIsCorrect(Array(answers.length).fill(false));
   }, [answers, vword]);
-
 const handleInputChange = async (e, i, j) => {
-    if (disabledRows[i]) return; // already completed remotely
+  if (disabledRows[i]) return; // already completed remotely
 
-    const newValue = (e.target.value || '').toUpperCase().slice(-1);
-    setInputAns(prev => {
-      const copy = prev.map(r => r.slice());
-      if (!copy[i]) copy[i] = Array((answers[i] || '').length).fill('');
-      copy[i][j] = newValue;
-      return copy;
+  const reward = 10;
+  const newValue = (e.target.value || '').toUpperCase().slice(-1);
+
+  // cập nhật inputAns local
+  setInputAns(prev => {
+    const copy = prev.map(r => r.slice());
+    if (!copy[i]) copy[i] = Array((answers[i] || '').length).fill('');
+    copy[i][j] = newValue;
+    return copy;
+  });
+
+  // tạo candidate dựa trên current inputAns (không chờ setState)
+  const candidate = (inputAns[i] ? inputAns[i].slice() : Array((answers[i] || '').length).fill(''));
+  candidate[j] = newValue;
+  const word = candidate.join('');
+  const correct = (answers[i] || '').toString();
+
+  const isRowCorrect = word.toLowerCase() === correct.toLowerCase();
+
+  setIsCorrect(prev => {
+    const cp = prev.slice();
+    cp[i] = isRowCorrect;
+    return cp;
+  });
+
+  if (!isRowCorrect || disabledRows[i]) return;
+
+  // -> hàng đúng và chưa disable: optimistic xử lý
+  // 1) disable row locally để UX mượt
+  setDisabledRows(prev => {
+    const cp = prev.slice();
+    cp[i] = true;
+    return cp;
+  });
+
+  // 2) optimistic tăng điểm trên popup ngay (nếu setScoreFromServer được truyền)
+  //    dùng functional updater để tránh stale value
+  if (typeof setScoreFromServer === 'function') {
+    setScoreFromServer(prev => {
+      const numericPrev = Number(prev) || 0;
+      return numericPrev + reward;
+    });
+  }
+
+  // 3) gọi server để persist (idempotent). server phải trả { already, points }
+  try {
+    const resp = await axiosInstance.post('/complete-row', {
+      userId: userInfo.id,
+      puzzleId,
+      rowIndex: i,
+      reward
     });
 
-    // compute candidate locally (use latest inputAns; since setState is async we build from current + new char)
-    const candidate = (inputAns[i] ? inputAns[i].slice() : Array((answers[i] || '').length).fill(''));
-    candidate[j] = newValue;
-    const word = candidate.join('');
-    const correct = (answers[i] || '').toString();
+    // nếu server trả points, sync lại với server (prefer server value)
+    if (resp?.data?.points != null && typeof setScoreFromServer === 'function') {
+      setScoreFromServer(Number(resp.data.points));
+    }
 
-    const isRowCorrect = word.toLowerCase() === correct.toLowerCase();
+    // nếu server nói đã completed trước đó (already), server có thể trả same points
+    // nothing more to do
+  } catch (err) {
+    console.error('complete-row error', err);
 
-    setIsCorrect(prev => {
+    // rollback: nếu muốn hoàn tác việc disable & điểm khi lỗi
+    // (tùy UX: bạn có thể giữ disable và retry later; dưới đây là rollback)
+    setDisabledRows(prev => {
       const cp = prev.slice();
-      cp[i] = isRowCorrect;
+      cp[i] = false;
       return cp;
     });
-
-    if (isRowCorrect && !disabledRows[i]) {
-      // optimistic set to prevent double requests from quick users
-      setDisabledRows(prev => { const cp = prev.slice(); cp[i] = true; return cp; });
-
-      try {
-        const resp = await axiosInstance.post('/complete-row', {
-          userId: userInfo.id,
-          puzzleId,
-          rowIndex: i,
-          reward: 10
-        });
-
-        if (resp.data?.already) {
-          // already completed remotely — nothing to do
-        } else {
-          // success: server awarded points and stored completion
-          // if you want, update local userInfo.points (if kept in context)
-          // e.g. updateUserPoints(resp.data.points);
-        }
-      } catch (err) {
-        console.error('complete-row error', err);
-        // rollback optimistic if desired:
-        // setDisabledRows(prev => { const cp = prev.slice(); cp[i] = false; return cp; });
-        // but better keep disabled and let retry later; or show message
-      }
+    if (typeof setScoreFromServer === 'function') {
+      // trừ lại điểm optimistic
+      setScoreFromServer(prev => {
+        const numericPrev = Number(prev) || 0;
+        const newVal = numericPrev - reward;
+        return newVal >= 0 ? newVal : 0;
+      });
     }
-  };
+    // hiển thị lỗi cho user
+    alert('Không thể lưu trạng thái hoàn thành hàng. Vui lòng thử lại.');
+  }
+};
+
 
 
   useEffect(() => {
@@ -156,7 +189,7 @@ const handleInputChange = async (e, i, j) => {
   const handleBuyHint = async (rowIndex) => {
     console.log(`Buy hint for row ${rowIndex}`);
     // console.log("userInfo in handleBuyHint:", userInfo.hints);
-    if(userInfo.point < 10) 
+    if(userInfo.point < 4) 
     {      alert('Không đủ điểm để mua hint');
       return;
     }
@@ -164,7 +197,7 @@ const handleInputChange = async (e, i, j) => {
       const response = await axiosInstance.post('/request-buy-hint', {
         userId: userInfo.id,
         rowId: puzzleId * 10 + rowIndex,
-        hintCost: 10
+        hintCost: userInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) ? 6 : 4
     }
       );
       alert('Yêu cầu mua hint thành công');
@@ -222,7 +255,7 @@ const handleInputChange = async (e, i, j) => {
               style={{ gridRow: i + 1, gridColumn: currInitPosition + rowWord.length + 1 }}
               onClick={() => handleBuyHint(i + 1)}
             >
-              {userInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) ? '(Đã mua)' : 'Mua hint 1 (-10 điểm)'}
+              {userInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) ? '(Đã mua)' : 'Mua hint 1 (-4 điểm)'}
             </button>
             }
             {
@@ -232,7 +265,7 @@ const handleInputChange = async (e, i, j) => {
               style={{ gridRow: i + 1, gridColumn: currInitPosition + rowWord.length + 1 }}
               onClick={() => handleBuyHint(i + 1)}
             >
-              {userInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) &&  'Mua hint 2 (-10 điểm)'}
+              {userInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) &&  'Mua hint 2 (-6 điểm)'}
             </button>
             }
           </React.Fragment>
@@ -248,7 +281,7 @@ const handleInputChange = async (e, i, j) => {
 
 
 // CrosswordContainer component renders the crossword puzzle container.
-const CrosswordContainer = ({ puzzleId, userInfo }) => {
+const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   // console.log("User Info in CrosswordContainer:", userInfo);
   const { getPuzzleById, showAnswers, loadingPuzzles, puzzlesError } = useContext(AppContext);
 
@@ -295,6 +328,7 @@ const CrosswordContainer = ({ puzzleId, userInfo }) => {
         inputRefs={inputRefs}
         puzzleId={puzzleId}
         userInfo={userInfo}
+        setScoreFromServer={setScoreFromServer}
       />
     </div>
   );

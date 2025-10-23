@@ -533,20 +533,15 @@ app.post('/complete-row', async (req, res) => {
       return res.status(400).json({ error: 'Missing parameters' });
     }
 
-    // 1) Try insert into completed_rows
     const insertResp = await supabase
       .from('completed_rows')
       .insert({ user_id: userId, puzzle_id: puzzleId, row_index: rowIndex })
       .select()
       .maybeSingle();
-
-    // If insertResp.error exists, check if it's duplicate key error
+    console.log('Insert completed_rows response:', insertResp);
     if (insertResp.error) {
-      // Duplicate or other error
       const errMessage = insertResp.error.message || '';
-      // Postgres duplicate key typically returns "duplicate key value"
       if (errMessage.includes('duplicate key')) {
-        // already completed previously -> idempotent
         return res.json({ message: 'Already completed', already: true });
       } else {
         console.error('Insert completed_rows error', insertResp.error);
