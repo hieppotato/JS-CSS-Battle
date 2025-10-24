@@ -4,7 +4,25 @@ const cors = require('cors');
 const axios = require('axios');
 const { supabase } = require('./config/db');
 const app = express();
-app.use(cors({ origin: "https://js-css-battle.vercel.app/"}));
+
+const cors = require("cors");
+
+const allowedOrigins = [
+  "https://js-css-battle.vercel.app"
+];
+
+app.use(cors({
+  origin: function(origin, callback){
+    if(!origin) return callback(null, true); // allow mobile apps or curl
+    if(allowedOrigins.indexOf(origin) === -1){
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
+
 
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
