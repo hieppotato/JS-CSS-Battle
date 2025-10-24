@@ -22,7 +22,7 @@
 
 /* card wrapper */
 .cp-card {
-  max-width: 980px;
+  max-width: 1080px;
   width: 100%;
   /* MODIFIED: Nền card màu blue đậm trong suốt */
   background: linear-gradient(180deg, rgba(10, 25, 40, 0.7), rgba(0, 10, 20, 0.6));
@@ -119,6 +119,11 @@ button.btn {
   font-size: 14px;
 }
 
+:root {
+  --hint-col-width: 140px;   /* nếu muốn thay đổi bề rộng column hint thì chỉnh ở đây */
+  --hint-gap: 24px;          /* khoảng cách giữa puzzle-form và hint column */
+}
+
 /* primary action */
 .btn-primary {
   /* MODIFIED: Nút chính màu xanh aqua */
@@ -127,45 +132,75 @@ button.btn {
   box-shadow: 0 8px 20px rgba(0, 150, 199, 0.2);
 }
 
+/* --- layout: center puzzle-form, keep hint column fixed to the right --- */
+
+/* đảm bảo parent cho phép absolute positioning cho hint */
 .puzzle-with-hints {
-  display: flex;
-  flex-direction: row;
-  justify-content: center; /* Căn giữa 2 cột với nhau */
-  align-items: flex-start;
-  gap: 24px; /* Khoảng cách giữa lưới và cột hint */
+  position: relative;        /* để hint-button-column absolute an toàn */
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 20px;           /* padding tổng cho vùng (không ảnh hưởng vị trí hint) */
 }
 
-/* Cột chứa các button hint */
+/* puzzle-form sẽ được căn giữa trong .puzzle-with-hints */
+.puzzle-form {
+  max-width: calc(100% - (var(--hint-col-width) + var(--hint-gap)));
+  width: 100%;
+  margin: 0 auto;
+  display: grid;
+  row-gap: 18px;
+  column-gap: 8px;
+  padding: 40px;
+  box-sizing: border-box;
+  background: rgba(0,0,0,0.18);
+  border-radius: 10px;
+  border: 1px solid rgba(72, 202, 228, 0.1);
+  overflow: auto;
+}
+
+/* đặt cột hint nằm ở phải, không tác động tới margin auto của puzzle-form */
 .hint-button-column {
+  position: absolute;
+  right: -50px;                 /* cách mép phải card */
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--hint-col-width);
   display: flex;
   flex-direction: column;
-  /* LƯU Ý QUAN TRỌNG: 
-    Các giá trị 'gap' và 'padding-top' bên dưới 
-    PHẢI KHỚP với 'gap' và 'padding-top' của class .puzzle-form 
-    để các button thẳng hàng với ô chữ.
-  */
-  gap: 8px; /* <-- Phải bằng 'gap' của .puzzle-form */
-  padding-top: 40px; /* <-- Phải bằng 'padding-top' của .puzzle-form */
+  gap: 8px;
+  z-index: 10;
+  box-sizing: border-box;
+  pointer-events: auto;
 }
 
-/* Wrapper cho mỗi button, dùng để căn chỉnh chiều cao */
+/* wrapper cho button để căn giữa theo chiều dọc trong ô hint */
 .hint-button-wrapper {
-  /* LƯU Ý QUAN TRỌNG:
-    'height' bên dưới PHẢI KHỚP với 'height' của class .puzzle-cell 
-  */
-  height: 55px; /* <-- Phải bằng 'height' của .puzzle-cell */
+  height: 55px; /* giữ bằng .puzzle-cell height */
   display: flex;
-  align-items: center; /* Căn giữa button theo chiều dọc */
+  align-items: center;
+  justify-content: center;
 }
 
+/* Khi màn nhỏ: đưa hint column xuống dưới puzzle-form */
+@media (max-width: 900px) {
+  .hint-button-column {
+    position: static;        /* trở về luồng bình thường */
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 12px;
+    top: auto;
+    right: auto;
+  }
+  /* puzzle-form sẽ chiếm toàn chiều ngang nhỏ */
+  .puzzle-form {
+    max-width: 100%;
+    padding: 20px;
+  }
+}
 
-/* === SỬA ĐỔI: Style cho Button Hint === */
-
-/* Bạn cần XÓA hoặc THAY THẾ rule CSS cũ: 
-  .puzzle-form button[type="button"] { ... } 
-  
-  Và thay bằng rule .hint-button này:
-*/
 .hint-button {
   /* Yêu cầu: Width dài hơn */
   width: 100px; 
@@ -196,7 +231,6 @@ button.btn {
   box-shadow: 0 5px 15px rgba(0, 150, 199, 0.2); /* Đổ bóng màu aqua */
 }
 
-/* footer row: completed count & vertical guess */
 .cp-footer {
   display: flex;
   flex-direction: column;
@@ -232,6 +266,8 @@ button.btn {
   outline: none;
   font-size: 14px;
 }
+
+
 
 /* vertical input focus */
 .vertical-input:focus {
