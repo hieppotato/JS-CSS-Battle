@@ -38,7 +38,7 @@ app.post("/signup", async (req, res) => {
       },
     });
     
-    await supabase.from('profiles').insert([{id: data.user.id, name, point: 0, role: "user"}]);
+    await supabase.from('profiles').insert([{id: data.user.id, name, point: 0, role: "user", hints: [], puzzles: [], rows: []}]);
 
     if (error) return res.status(400).json({ error: error.message });
 
