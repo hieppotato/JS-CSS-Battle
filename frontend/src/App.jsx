@@ -35,6 +35,18 @@ const App = () => {
   return newToken;
 };
 
+const [puzzles, setPuzzles] = useState([]);
+
+    const fetchPuzzles = async () => {
+      try {
+        const response = await axiosInstance.get('/puzzles');
+        setPuzzles(response.data);
+      } catch (error) {
+        console.error('Error fetching puzzles:', error);
+      } 
+    };
+
+
 const fetchProfile = useCallback(async () => {
   let token = localStorage.getItem("token");
   try {
@@ -74,6 +86,7 @@ const fetchProfile = useCallback(async () => {
 
   useEffect(() => {
     fetchProfile();
+    fetchPuzzles();
     const handleStorageChange = () => {
       fetchProfile();
     };
@@ -88,8 +101,8 @@ const fetchProfile = useCallback(async () => {
     <div>
       <Router>
         <Routes>
-          <Route path="/" element={<PrivateRoute><Home/></PrivateRoute>}/>
-          <Route path="/home" element={<PrivateRoute><Home userInfo={userInfo}/></PrivateRoute>}/>
+          <Route path="/" element={<PrivateRoute><Home userInfo={userInfo} puzzles={puzzles}/></PrivateRoute>}/>
+          <Route path="/home" element={<PrivateRoute><Home userInfo={userInfo} puzzles={puzzles}/></PrivateRoute>}/>
           <Route path="/login" element={<Login fetchProfile = {fetchProfile}/>}/>
           <Route path="/create-contest" element={<PrivateRoute><CreateContest userInfo={userInfo}/></PrivateRoute>}/>
           <Route path="/contest/:contestId" element={<PrivateRoute><Contest userInfo={userInfo}/></PrivateRoute>}/>
