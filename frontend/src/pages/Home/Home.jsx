@@ -21,61 +21,29 @@ const Home = ({ puzzles, userInfo, setUserInfo }) => {
   };
 
   const handleSubmitCss = async (questionId) => {
-    const now = Date.now();
+  if (!userId) return alert("Vui lòng đăng nhập.");
 
-    // Throttle: 5 giây mới cho submit lại
-    if (lastSubmitTime[questionId] && now - lastSubmitTime[questionId] < 5000) {
-      alert("Vui lòng chờ vài giây trước khi nộp lại.");
-      return;
-    }
+  const cssPoint = cssPoints[questionId];
+  if (!cssPoint && cssPoint !== 0) return alert("Nhập điểm trước khi nộp.");
 
-    if (!window.confirm(`Bạn có chắc muốn nộp bài ${questionId}?`)) return;
+  setLoading(questionId); // hiện "Đang nộp..."
+  try {
+    await axiosInstance.post("/request-submit-css", {
+      userId,
+      questionId,
+      cssPoint: Number(cssPoint),
+      userName: userInfo.name
+    });
 
-    const cssPoint = cssPoints[questionId];
+    handlePointChange(questionId, ""); 
 
-    if (!userId) {
-      alert("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.");
-      return;
-    }
-    if (!cssPoint && cssPoint !== 0) {
-      alert("Vui lòng nhập điểm CSS trước khi nộp.");
-      return;
-    }
+  } catch (err) {
+    alert(`Lỗi khi nộp bài ${questionId}: ${err.response?.data?.error || err.message}`);
+  } finally {
+    setLoading(null); // bỏ "Đang nộp..."
+  }
+};
 
-    setLoading(questionId);
-    setLastSubmitTime((prev) => ({ ...prev, [questionId]: now }));
-
-    try {
-      const { data } = await axiosInstance.post("/request-submit-css", {
-        userId,
-        questionId,
-        cssPoint: Number(cssPoint),
-        userName: userInfo.name
-      });
-
-      alert(`Yêu cầu nộp bài ${questionId} đã được gửi thành công!`);
-
-      // Clear input
-      handlePointChange(questionId, "");
-
-      // Update userInfo.rows để disable button ngay
-      setUserInfo((prev) => ({
-        ...prev,
-        rows: [...(prev.rows || []), questionId]
-      }));
-
-      console.log("Request created:", data.request);
-    } catch (err) {
-      console.error("Lỗi khi nộp bài CSS:", err);
-      alert(
-        `Lỗi khi nộp bài ${questionId}: ${
-          err.response?.data?.error || err.message
-        }`
-      );
-    } finally {
-      setLoading(null);
-    }
-  };
 
   return (
     <div className="home-container">
@@ -98,25 +66,25 @@ const Home = ({ puzzles, userInfo, setUserInfo }) => {
                       placeholder="Nhập điểm"
                       value={cssPoints[id] || ""}
                       onChange={(e) => handlePointChange(id, e.target.value)}
-                      disabled={isSubmitted}
+                      disabled={isSubmitted || loading === id} // disable input nếu đã nộp hoặc đang nộp
                     />
                   </div>
 
                   {!isSubmitted && (
                     <button
                       onClick={() => handleSubmitCss(id)}
-                      disabled={loading === id}
+                      disabled={loading === id} // disable khi đang nộp
                       className="submit-btn"
                     >
                       {loading === id ? "Đang nộp..." : "Nộp"}
                     </button>
                   )}
-                  {isSubmitted && (
-                    <span className="submitted-label">Đã nộp</span>
-                  )}
+
+                  {isSubmitted && <span className="submitted-label">Đã nộp</span>}
                 </div>
               );
             })}
+
           </div>
         </div>
 
