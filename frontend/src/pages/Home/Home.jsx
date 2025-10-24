@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 import { useNavigate } from "react-router-dom";
-import "./home.css"; // ✅ import file CSS riêng
+import "./home.css";
 
 const cssQuestions = [1, 2, 3, 4, 5, 6, 7];
 
-const Home = ({ puzzles, userInfo }) => {
+const Home = ({ puzzles, userInfo, setUserInfo }) => {
   const navigate = useNavigate();
   const userId = userInfo?.id;
+
   const [cssPoints, setCssPoints] = useState({});
   const [loading, setLoading] = useState(null);
+  const [lastSubmitTime, setLastSubmitTime] = useState({});
 
   const handlePointChange = (questionId, value) => {
     setCssPoints((prevPoints) => ({
@@ -19,19 +21,29 @@ const Home = ({ puzzles, userInfo }) => {
   };
 
   const handleSubmitCss = async (questionId) => {
-    setLoading(questionId);
+    const now = Date.now();
+
+    // Throttle: 5 giây mới cho submit lại
+    if (lastSubmitTime[questionId] && now - lastSubmitTime[questionId] < 5000) {
+      alert("Vui lòng chờ vài giây trước khi nộp lại.");
+      return;
+    }
+
+    if (!window.confirm(`Bạn có chắc muốn nộp bài ${questionId}?`)) return;
+
     const cssPoint = cssPoints[questionId];
 
     if (!userId) {
       alert("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.");
-      setLoading(null);
       return;
     }
     if (!cssPoint && cssPoint !== 0) {
       alert("Vui lòng nhập điểm CSS trước khi nộp.");
-      setLoading(null);
       return;
     }
+
+    setLoading(questionId);
+    setLastSubmitTime((prev) => ({ ...prev, [questionId]: now }));
 
     try {
       const { data } = await axiosInstance.post("/request-submit-css", {
@@ -40,8 +52,18 @@ const Home = ({ puzzles, userInfo }) => {
         cssPoint: Number(cssPoint),
         userName: userInfo.name
       });
+
       alert(`Yêu cầu nộp bài ${questionId} đã được gửi thành công!`);
+
+      // Clear input
       handlePointChange(questionId, "");
+
+      // Update userInfo.rows để disable button ngay
+      setUserInfo((prev) => ({
+        ...prev,
+        rows: [...(prev.rows || []), questionId]
+      }));
+
       console.log("Request created:", data.request);
     } catch (err) {
       console.error("Lỗi khi nộp bài CSS:", err);
@@ -66,6 +88,7 @@ const Home = ({ puzzles, userInfo }) => {
               const isSubmitted =
                 userInfo?.rows?.includes(id.toString()) ||
                 userInfo?.rows?.includes(id);
+
               return (
                 <div key={id} className="css-item">
                   <div className="css-input-group">
@@ -78,6 +101,7 @@ const Home = ({ puzzles, userInfo }) => {
                       disabled={isSubmitted}
                     />
                   </div>
+
                   {!isSubmitted && (
                     <button
                       onClick={() => handleSubmitCss(id)}
