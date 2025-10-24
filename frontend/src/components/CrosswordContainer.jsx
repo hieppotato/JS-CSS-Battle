@@ -243,7 +243,7 @@ const handleInputChange = async (e, i, j) => {
                   }
                   onChange={(e) => handleInputChange(e, i, j)}
                   maxLength={1}
-                  disabled={!!disabledRows[i] || !userInfo.rows.includes(String(i + 1)) || !userInfo.rows.includes(i + 1)}
+                  disabled={!!disabledRows[i] || !userInfo.rows.includes(String(i + 1))}
                   // disabled={!userInfo.rows.includes(String(i + 1))}
                   ref={el => {
                     if (inputRefs && inputRefs.current) {
