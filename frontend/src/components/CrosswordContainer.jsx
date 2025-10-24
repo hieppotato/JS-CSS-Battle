@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import { AppContext } from '../AppProvider';
 import { stopTimerHandler } from '../scripts/timer-crossword';
 import axiosInstance from '../utils/axiosInstance';
+import './style.css';
 
 // DrawCrossword component renders the crossword puzzle form.
 export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, puzzleId, userInfo, setScoreFromServer, setCount }) => {
@@ -371,32 +372,48 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
 
   
 
-  return (
-    <div className="container-md actual" id="cpuzzle">
-      <DrawCrossword
-        showAnswers={showAnswers}
-        handleKeyDown={handleKeyDown}
-        inputRefs={inputRefs}
-        puzzleId={puzzleId}
-        userInfo={userInfo}
-        setScoreFromServer={setScoreFromServer}
-        setCount={setCount}
-      />
-      <div> {count} </div>
-      {count > 4 && !disableInput && <>
-        <input
-        name="verticalGuess"
-        placeholder="Đoán chữ hàng dọc"
-        value={verticalGuess}
-        onChange={(e) => setVerticalGuess(e.target.value)}
-      />
-      <button
-        type="button"
-        onClick={handleVerticalSubmit}
-      >
-        Nộp
-      </button>
-    </>}
+    return (
+    <div className="page-root">
+      <div className="draw-center">
+        <div className="card cp-card">
+          <h2 className="cp-title">Crossword Completion Progress</h2>
+
+          <div className="cp-body">
+            <DrawCrossword
+              showAnswers={showAnswers}
+              handleKeyDown={handleKeyDown}
+              inputRefs={inputRefs}
+              puzzleId={puzzleId}
+              userInfo={userInfo}
+              setScoreFromServer={setScoreFromServer}
+              setCount={setCount}
+            />
+
+            <div className="cp-footer">
+              <div className="completed-count">Đã hoàn thành: <strong>{count}</strong></div>
+
+              {count > 4 && !disableInput && (
+                <div className="vertical-guess-row">
+                  <input
+                    name="verticalGuess"
+                    placeholder="Đoán chữ hàng dọc"
+                    value={verticalGuess}
+                    onChange={(e) => setVerticalGuess(e.target.value)}
+                    className="vertical-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerticalSubmit}
+                    className="btn btn-primary"
+                  >
+                    Nộp
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
