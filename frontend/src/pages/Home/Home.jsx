@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 import { useNavigate } from "react-router-dom";
-import "./Home.css"; // ✅ import file CSS riêng
+import "./home.css"; // ✅ import file CSS riêng
 
 const cssQuestions = [1, 2, 3, 4, 5, 6, 7];
 
