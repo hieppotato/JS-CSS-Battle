@@ -398,6 +398,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
                   <div key={`hint-btn-wrapper-${i}`} className="hint-button-wrapper">
                     {userInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) ? (
                       // Đã mua hint 1 -> Hiển thị nút mua hint 2
+                      userInfo.hints.includes(toString(puzzleId * 10 + i + 1)) && 
                       <button
                         type="button"
                         className="btn hint-button" // // Dùng class mới
