@@ -201,6 +201,26 @@ button.btn {
   }
 }
 
+.puzzle-cell.vword-cell {
+  border-color: rgba(80, 230, 200, 0.95); /* viền aqua sáng */
+  box-shadow: 0 6px 18px rgba(80, 230, 200, 0.14), inset 0 1px 0 rgba(255,255,255,0.03);
+  /* nếu muốn viền dày hơn */
+  border-width: 2px;
+}
+
+/* khi ô vword được focus */
+.puzzle-cell.vword-cell:focus {
+  box-shadow: 0 10px 30px rgba(80,230,200,0.22);
+  transform: translateY(-2px);
+}
+
+/* nếu bạn muốn ô vword khác khi đã correct (kết hợp với .correct-answer) */
+.puzzle-cell.correct-answer.vword-cell {
+  background: linear-gradient(180deg, #32e6c6, #0ca686); /* optional: nền khác khi đúng */
+  color: #02110b;
+  border-color: rgba(255, 255, 255, 0.85);
+}
+
 .hint-button {
   /* Yêu cầu: Width dài hơn */
   width: 100px; 

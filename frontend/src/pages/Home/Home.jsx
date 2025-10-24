@@ -3,8 +3,9 @@ import axiosInstance from '../../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 
 const Home = ({puzzles}) => {
-  const navigate = useNavigate();
-  
+  const navigate = (e) => {
+    window.location.href = e;
+  };  
 
   return (
     <div>

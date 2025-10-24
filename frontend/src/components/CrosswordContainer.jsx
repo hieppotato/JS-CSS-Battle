@@ -32,24 +32,33 @@ export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, p
   const [disabledRows, setDisabledRows] = useState(() => Array(answers.length).fill(false));
 
   useEffect(() => {
-    const loadCompleted = async () => {
-      if (!userInfo?.id || !puzzleId) return;
-      try {
-        const resp = await axiosInstance.get('/user-completed-rows', {
-          params: { userId: userInfo.id, puzzleId }
-        });
-        const completed = resp.data?.completedRows || [];
-        setDisabledRows(prev => {
-          const arr = Array(Math.max(prev.length, answers.length)).fill(false);
-          completed.forEach(idx => { if (typeof idx === 'number') arr[idx] = true; });
-          return arr;
-        });
-      } catch (err) {
-        console.error('loadCompleted error', err);
-      }
-    };
-    loadCompleted();
-  }, [userInfo?.id, puzzleId, answers.length]);
+  const loadCompleted = async () => {
+    if (!userInfo?.id || !puzzleId) return;
+    try {
+      const resp = await axiosInstance.get('/user-completed-rows', {
+        params: { userId: userInfo.id, puzzleId }
+      });
+      const completed = resp.data?.completedRows || [];
+
+      // build arr then set it and cập nhật count ngay lập tức
+      setDisabledRows(prev => {
+        const arr = Array(Math.max(prev.length, answers.length)).fill(false);
+        completed.forEach(idx => { if (typeof idx === 'number') arr[idx] = true; });
+
+        // update count trực tiếp khi đã tính arr
+        if (typeof setCount === 'function') {
+          setCount((arr || []).filter(Boolean).length);
+        }
+        return arr;
+      });
+
+    } catch (err) {
+      console.error('loadCompleted error', err);
+    }
+  };
+  loadCompleted();
+}, [userInfo?.id, puzzleId, answers.length, setCount]);
+
   
   const numberOfDisabledRows = disabledRows.map(e => e ? 1 : 0).reduce((a, b) => a + b, 0);
   
@@ -125,10 +134,22 @@ const handleInputChange = async (e, i, j) => {
   if (!isRowCorrect || disabledRows[i]) return;
 
   setDisabledRows(prev => {
-    const cp = prev.slice();
-    cp[i] = true;
-    return cp;
-  });
+  const cp = prev.slice();
+  // đảm bảo đủ dài
+  if (cp.length < answers.length) {
+    const tmp = Array(Math.max(answers.length, cp.length)).fill(false);
+    for (let k = 0; k < cp.length; k++) tmp[k] = cp[k];
+    cp.splice(0, cp.length, ...tmp);
+  }
+  cp[i] = true;
+
+  // cập nhật count ngay lập tức
+  if (typeof setCount === 'function') {
+    setCount((cp || []).filter(Boolean).length);
+  }
+
+  return cp;
+});
 
   if (typeof setScoreFromServer === 'function') {
     setScoreFromServer(prev => {
@@ -154,6 +175,11 @@ const handleInputChange = async (e, i, j) => {
     setDisabledRows(prev => {
       const cp = prev.slice();
       cp[i] = false;
+
+      // cập nhật count ngay lập tức sau rollback
+      if (typeof setCount === 'function') {
+        setCount((cp || []).filter(Boolean).length);
+      }
       return cp;
     });
     if (typeof setScoreFromServer === 'function') {
@@ -194,10 +220,17 @@ const handleInputChange = async (e, i, j) => {
               const correctValue = rowWord[j] || '';
               const defaultValue = inputAns[i] ? inputAns[i][j] : '';
 
+              // đánh dấu ô chứa ký tự của vertical word (vChar)
+              const isVChar = (charIndex >= 0 && j === charIndex);
+
               return (
                 <input
                   key={`${i}-${j}`}
-                  className={'puzzle-cell ' + (isCorrect[i] ? 'correct-answer' : '')}
+                  className={
+                    'puzzle-cell ' +
+                    (isCorrect[i] ? 'correct-answer ' : '') +
+                    (isVChar ? 'vword-cell' : '')
+                  }
                   style={{ gridRow: i + 1, gridColumn: currInitPosition + j + 1, ...colors }}
                   value={
                     showAnswers
@@ -217,7 +250,7 @@ const handleInputChange = async (e, i, j) => {
                 />
               );
             })}
-            
+           
             {/* // // XÓA: Toàn bộ logic render button hint đã bị xóa khỏi đây.
               // // Bạn không cần làm gì cả, code này đã bị loại bỏ.
             */}
