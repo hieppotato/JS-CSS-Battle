@@ -344,8 +344,6 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
     }, 0);
   }
 
-  console.log(countOccurrences(userInfo.hints, "13"));
-
   const handleVerticalSubmit = async () => {
   if (!verticalGuess.trim()) {
     alert('Vui lòng nhập chữ hàng dọc.');
