@@ -649,6 +649,80 @@ app.post("/complete-vword", async (req, res) => {
   }
 });
 
+app.get("/get-requests", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("requests")
+      .select("*")
+      .order("created_at", { ascending: false }); 
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/request-submit-css", async (req, res) => { 
+  try {
+    const { userId, questionId, cssPoint } = req.body;
+    if (!userId || !questionId || cssPoint == null) {
+      return res.status(400).json({ error: "Missing parameters" });
+    }
+    const { data, error } = await supabase
+      .from("requests")
+      .insert([{ userId, questionId, type: "submit_css", status: "pending", cssPoint }])
+      .select()
+      .maybeSingle();
+    if (error) throw error;
+    res.status(201).json({ message: "Request created", request: data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  } 
+});
+
+app.put("/approve-css-submission", async (req, res) => {
+  try{
+    const { userId, requestId, rowId, cssPoint } = req.body;
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("*") 
+      .eq("id", userId)
+      .maybeSingle();
+    if(profileError) throw profileError;
+
+    console.log("userData", profile);
+
+    const rowArr = Array.isArray(profile.rows) ? profile.rows : [];
+    const newPoint = profile.point + Number(cssPoint);
+    const newRow = [...rowArr, rowId];
+
+    console.log(profile.point, newPoint);
+
+    const {data, error} = await supabase
+    .from("profiles")
+    .update({point: newPoint, rows: newRow})
+    .eq("id", userId)
+    .select()
+    .maybeSingle()
+    if(error) throw error;
+    
+    const { updatedRequest, ErrorRequest} = await supabase
+    .from("requests")
+    .update({status: "approve"})
+    .eq("id", requestId)
+    if(ErrorRequest) throw ErrorRequest;
+
+    res.json({user : data, request: updatedRequest});
+    
+  }catch(err){
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 app.get('/ping', (req,res)=>res.json({ok:true}));
 

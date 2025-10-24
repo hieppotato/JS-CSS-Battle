@@ -9,6 +9,10 @@ export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, p
   const { colors, timerRef, setTimerRef } = useContext(AppContext);
   const { getPuzzleById, loadingPuzzles, puzzlesError } = useContext(AppContext);
   
+  // console.log(userInfo.rows);
+  // const includes = !userInfo.rows.includes(String(1));
+  // console.log(includes);
+
   const puzzle = useMemo(() => {
     if (!puzzleId) return null;
     return getPuzzleById(puzzleId);
@@ -167,6 +171,7 @@ const handleInputChange = async (e, i, j) => {
     });
 
     if (resp?.data?.points != null && typeof setScoreFromServer === 'function') {
+      alert('Hàng hoàn thành! Điểm của bạn đã được cập nhật.');
       setScoreFromServer(Number(resp.data.points));
     }
   } catch (err) {
@@ -239,7 +244,8 @@ const handleInputChange = async (e, i, j) => {
                   }
                   onChange={(e) => handleInputChange(e, i, j)}
                   maxLength={1}
-                  disabled={!!disabledRows[i]}
+                  disabled={!!disabledRows[i] || !userInfo.rows.includes(String(i + 1))}
+                  // disabled={!userInfo.rows.includes(String(i + 1))}
                   ref={el => {
                     if (inputRefs && inputRefs.current) {
                       if (!inputRefs.current[i]) inputRefs.current[i] = Array(36).fill(null);
