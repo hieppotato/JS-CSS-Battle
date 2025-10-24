@@ -221,7 +221,7 @@ const handleInputChange = async (e, i, j) => {
   }
   
   return (
-  <form className="puzzle-form" style={{ display: 'grid', gridTemplateRows: `repeat(${answers.length}, 1fr)` }}>
+  <form className="puzzle-form" style={{ display: 'grid', gridTemplateRows: `repeat(${answers.length}, 44px)` }}>
     {answers.map((rowWordRaw, i) => {
       try {
         const rowWord = (rowWordRaw || '').toString();
