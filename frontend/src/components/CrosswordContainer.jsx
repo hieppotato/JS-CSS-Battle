@@ -338,6 +338,12 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   if (puzzlesError) return <div>Error loading puzzles.</div>;
   if (!puzzle) return <div>Puzzle not found.</div>;
 
+  function countOccurrences(array, item) {
+    return array.reduce((count, current) => {
+      return current === item ? count + 1 : count;
+    }, 0);
+  }
+
   const handleVerticalSubmit = async () => {
   if (!verticalGuess.trim()) {
     alert('Vui lòng nhập chữ hàng dọc.');
@@ -398,7 +404,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
                   <div key={`hint-btn-wrapper-${i}`} className="hint-button-wrapper">
                     {userInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) ? (
                       // Đã mua hint 1 -> Hiển thị nút mua hint 2
-                      userInfo.hints.includes(toString(puzzleId * 10 + i + 2)) && 
+                      countOccurrences(userInfo.hints, toString(puzzleId * 10 + i + 1) < 2) && 
                       <button
                         type="button"
                         className="btn hint-button" // // Dùng class mới
