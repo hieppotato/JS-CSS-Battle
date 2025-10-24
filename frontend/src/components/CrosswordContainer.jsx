@@ -4,7 +4,7 @@ import { stopTimerHandler } from '../scripts/timer-crossword';
 import axiosInstance from '../utils/axiosInstance';
 
 // DrawCrossword component renders the crossword puzzle form.
-export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, puzzleId, userInfo, setScoreFromServer }) => {
+export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, puzzleId, userInfo, setScoreFromServer, setCount }) => {
   const { colors, timerRef, setTimerRef } = useContext(AppContext);
   const { getPuzzleById, loadingPuzzles, puzzlesError } = useContext(AppContext);
   // console.log("userInfo :",userInfo);
@@ -50,8 +50,10 @@ export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, p
     };
     loadCompleted();
   }, [userInfo?.id, puzzleId, answers.length]);
-
-  // safe get vertical char for row i
+  
+  const numberOfDisabledRows = disabledRows.map(e => e ? 1 : 0).reduce((a, b) => a + b, 0);
+  // console.log("numberOfDisabledRows:", numberOfDisabledRows);
+  
   const getVChar = (i) => {
     if (!vword) return '';
     return (vword[i] || '').toString();
@@ -89,6 +91,16 @@ export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, p
     // reset correctness array
     setIsCorrect(Array(answers.length).fill(false));
   }, [answers, vword]);
+
+
+  useEffect(() => {
+  if (typeof setCount === 'function') {
+    const num = (disabledRows || []).filter(Boolean).length;
+    setCount(num);
+  }
+}, [disabledRows, setCount]);
+
+
 const handleInputChange = async (e, i, j) => {
   if (disabledRows[i]) return; // already completed remotely
 
@@ -284,8 +296,14 @@ const handleInputChange = async (e, i, j) => {
 const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   // console.log("User Info in CrosswordContainer:", userInfo);
   const { getPuzzleById, showAnswers, loadingPuzzles, puzzlesError } = useContext(AppContext);
-
+  const [count, setCount] = useState(0);
+  const [verticalGuess, setVerticalGuess] = useState('');
+  const [disableInput, setDisableInput] = useState(false);
   // select puzzle by id, memoized — chỉ recompute khi puzzleId hoặc map thay đổi inside getPuzzleById
+  useEffect(() => {
+    setDisableInput(userInfo?.puzzles?.includes(puzzleId));
+    // console.log(userInfo);
+  }, [userInfo, puzzleId]);
   const puzzle = useMemo(() => {
     if (!puzzleId) return null;
     return getPuzzleById(puzzleId);
@@ -320,6 +338,39 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   if (puzzlesError) return <div>Error loading puzzles.</div>;
   if (!puzzle) return <div>Puzzle not found.</div>;
 
+  const handleVerticalSubmit = async () => {
+  if (!verticalGuess.trim()) {
+    alert('Vui lòng nhập chữ hàng dọc.');
+    return;
+  }
+
+  // Chuyển hết về chữ thường để so sánh không phân biệt hoa/thường
+  const normalizedGuess = verticalGuess.trim().toLowerCase();
+  const correctVWord = vword.toLowerCase();
+
+  if (normalizedGuess === correctVWord) {
+    alert('Chính xác! Bạn đã đoán đúng chữ hàng dọc 🎉');
+    try{
+      const response = await axiosInstance.post('/complete-vword', {
+        userId: userInfo.id,
+        puzzleId,
+        reward: 100
+      });
+      if (response?.data?.points != null && typeof setScoreFromServer === 'function') {
+        setScoreFromServer(Number(response.data.points));
+        setDisableInput(response.data.puzzles?.includes(puzzleId));
+      }
+    } catch (error) {
+      console.error('Error completing vertical word:', error);
+      alert('Đã xảy ra lỗi khi gửi đáp án. Vui lòng thử lại.');
+    }
+  } else {
+    alert('Sai rồi, hãy thử lại 😅');
+  }
+};
+
+  
+
   return (
     <div className="container-md actual" id="cpuzzle">
       <DrawCrossword
@@ -329,7 +380,23 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
         puzzleId={puzzleId}
         userInfo={userInfo}
         setScoreFromServer={setScoreFromServer}
+        setCount={setCount}
       />
+      <div> {count} </div>
+      {count > 4 && !disableInput && <>
+        <input
+        name="verticalGuess"
+        placeholder="Đoán chữ hàng dọc"
+        value={verticalGuess}
+        onChange={(e) => setVerticalGuess(e.target.value)}
+      />
+      <button
+        type="button"
+        onClick={handleVerticalSubmit}
+      >
+        Nộp
+      </button>
+    </>}
     </div>
   );
 };

@@ -598,6 +598,58 @@ app.get('/user-completed-rows', async (req, res) => {
   }
 });
 
+app.post("/complete-vword", async (req, res) => {
+  try {
+    const { userId, puzzleId, reward } = req.body;
+    if (!userId || !puzzleId) {
+      return res.status(400).json({ error: 'Missing parameters' });
+    }
+
+    // 1) lấy profile
+    const sel = await supabase
+      .from('profiles')
+      .select('point, puzzles')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (sel.error) throw sel.error;
+    const profile = sel.data || {};
+    const currentPoints = Number(profile.point || 0);
+    const puzzlesArr = Array.isArray(profile.puzzles) ? profile.puzzles : [];
+
+    const pid = typeof puzzleId === 'number' ? puzzleId : puzzleId;
+    const already = puzzlesArr.includes(pid);
+
+    if (already) {
+      return res.json({ already: true, points: currentPoints, message: 'Already completed' });
+    }
+
+    const r = Number(reward) || 0;
+    const newPoint = currentPoints + r;
+    const newPuzzles = [...puzzlesArr, pid];
+
+    const upd = await supabase
+      .from('profiles')
+      .update({ point: newPoint, puzzles: newPuzzles })
+      .eq('id', userId)
+      .select()
+      .maybeSingle();
+
+    if (upd.error) throw upd.error;
+
+    return res.json({
+      already: false,
+      points: Number(upd.data?.point ?? newPoint),
+      puzzles: upd.data?.puzzles ?? newPuzzles,
+      message: 'Vertical word completed, points awarded'
+    });
+  } catch (err) {
+    console.error('complete-vword error', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 app.get('/ping', (req,res)=>res.json({ok:true}));
 
 const PORT = process.env.PORT || 8000;
