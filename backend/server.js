@@ -713,7 +713,7 @@ app.put("/approve-css-submission", async (req, res) => {
 
     const rowArr = Array.isArray(profile.rows) ? profile.rows : [];
     const newPoint = profile.point + Number(cssPoint);
-    const newRow = [...rowArr, rowId];
+    const newRow = [...rowArr, String(rowId)];
 
     // console.log(profile.point, newPoint);
 
