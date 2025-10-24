@@ -1,23 +1,4 @@
-:root {
-    font-family: "Ubuntu", cursive;
-    font-size: 16px;
-    font-weight: 400;
-    font-style: normal;
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
 
-    --wrong: #9f3647;
-    --correct: rgb(60, 179, 113);
-    --a: #10002B;
-    --b: #240046;
-    --c: #3C096C;
-    --d: #5A189A;
-    --e: #7B2CBF;
-    --f: #9D4EDD;
-    --g: #C77DFF;
-    --h: #E0AAFF;
-}
 
 body {
     color: var(--a);

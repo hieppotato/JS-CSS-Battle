@@ -10,6 +10,7 @@ import PuzzleGame from "./pages/PuzzleGame/PuzzleGame";
 import { supabase } from "./utils/supabaseClient";
 import PrivateRoute from './components/PrivateRoute';
 import CreatePuzzle from "./pages/PuzzleGame/CreatePuzzle";
+import UserDashboard from './pages/Home/UserDashboard';
 
 const App = () => {
 
@@ -108,6 +109,9 @@ const fetchProfile = useCallback(async () => {
           <Route path="/contest/:contestId" element={<PrivateRoute><Contest userInfo={userInfo}/></PrivateRoute>}/>
           <Route path="/puzzle-game/:id" element={<PrivateRoute><PuzzleGame userInfo={userInfo}/></PrivateRoute>}/>
           <Route path="/create-puzzle" element={<CreatePuzzle/>} />
+          <Route path="/home" element={<Home/>}/>
+          <Route path="/login" element={<Login/>}/>
+          <Route path="/dashboard" element={<UserDashboard/>}/>
         </Routes>
       </Router>
     </div>

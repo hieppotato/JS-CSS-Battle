@@ -373,7 +373,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   
 
     return (
-    <div className="page-root">
+    <div>
       <div className="draw-center">
         <div className="card cp-card">
           <h2 className="cp-title">Crossword Completion Progress</h2>

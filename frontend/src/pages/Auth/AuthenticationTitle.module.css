@@ -72,7 +72,6 @@ body {
   color: #868e96;
 }
 
-/* Phần tùy chọn: Remember me và Forgot password */
 .options {
   display: flex;
   justify-content: space-between;
@@ -90,9 +89,8 @@ body {
   margin-right: 8px;
 }
 
-/* Liên kết */
 .link {
-  color: #339af0; /* Màu xanh dương cho liên kết */
+  color: #339af0; 
   text-decoration: none;
   transition: text-decoration 0.2s ease-in-out;
 }
@@ -101,7 +99,6 @@ body {
   text-decoration: underline;
 }
 
-/* Nút Sign In */
 .signInButton {
   width: 100%;
   padding: 10px 0;
@@ -109,7 +106,7 @@ body {
   font-size: 1rem;
   font-weight: 600;
   color: #fff;
-  background-color: #228be6; /* Màu xanh dương cho nút */
+  background-color: #228be6; 
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -117,5 +114,5 @@ body {
 }
 
 .signInButton:hover {
-  background-color: #1c7ed6; /* Màu xanh đậm hơn khi hover */
+  background-color: #1c7ed6; 
 }
