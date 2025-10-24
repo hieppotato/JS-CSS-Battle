@@ -127,10 +127,6 @@ button.btn {
   box-shadow: 0 8px 20px rgba(0, 150, 199, 0.2);
 }
 
-/* hint button style override to look subtle */
-/* === THÊM MỚI: Bố cục cột hint === */
-
-/* Wrapper cho 2 cột: Lưới puzzle + Cột hint */
 .puzzle-with-hints {
   display: flex;
   flex-direction: row;
@@ -143,9 +139,10 @@ button.btn {
 .hint-button-column {
   display: flex;
   flex-direction: column;
-  /* LƯU Ý: 
-    gap và padding-top phải khớp với .puzzle-form 
-    để các button thẳng hàng với các ô chữ.
+  /* LƯU Ý QUAN TRỌNG: 
+    Các giá trị 'gap' và 'padding-top' bên dưới 
+    PHẢI KHỚP với 'gap' và 'padding-top' của class .puzzle-form 
+    để các button thẳng hàng với ô chữ.
   */
   gap: 8px; /* <-- Phải bằng 'gap' của .puzzle-form */
   padding-top: 40px; /* <-- Phải bằng 'padding-top' của .puzzle-form */
@@ -153,23 +150,33 @@ button.btn {
 
 /* Wrapper cho mỗi button, dùng để căn chỉnh chiều cao */
 .hint-button-wrapper {
-  /* Chiều cao phải = chiều cao 1 ô .puzzle-cell */
+  /* LƯU Ý QUAN TRỌNG:
+    'height' bên dưới PHẢI KHỚP với 'height' của class .puzzle-cell 
+  */
   height: 55px; /* <-- Phải bằng 'height' của .puzzle-cell */
   display: flex;
   align-items: center; /* Căn giữa button theo chiều dọc */
 }
 
+
+/* === SỬA ĐỔI: Style cho Button Hint === */
+
+/* Bạn cần XÓA hoặc THAY THẾ rule CSS cũ: 
+  .puzzle-form button[type="button"] { ... } 
+  
+  Và thay bằng rule .hint-button này:
+*/
 .hint-button {
   /* Yêu cầu: Width dài hơn */
-  width: 170px; 
+  width: 100px; 
   text-align: center;
   
-  /* Điều chỉnh lại padding/font từ class .btn */
+  /* Điều chỉnh lại padding/font từ class .btn (nếu cần) */
   padding: 8px 10px;
   font-size: 13px;
   font-weight: 600;
 
-  /* Style màu (giống style cũ bạn đã có) */
+  /* Style màu (giữ style cũ bạn đã có) */
   background: linear-gradient(180deg, #caf0f8, #ade8f4);
   color: #023047;
   

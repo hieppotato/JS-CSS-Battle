@@ -2,13 +2,12 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import { AppContext } from '../AppProvider';
 import { stopTimerHandler } from '../scripts/timer-crossword';
 import axiosInstance from '../utils/axiosInstance';
-import './style.css';
+import './style.css'; // // Đảm bảo bạn đã import file css
 
-// DrawCrossword component renders the crossword puzzle form.
+// DrawCrossword component (ĐÃ LOẠI BỎ LOGIC RENDER BUTTON)
 export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, puzzleId, userInfo, setScoreFromServer, setCount }) => {
   const { colors, timerRef, setTimerRef } = useContext(AppContext);
   const { getPuzzleById, loadingPuzzles, puzzlesError } = useContext(AppContext);
-  // console.log("userInfo :",userInfo);
   
   const puzzle = useMemo(() => {
     if (!puzzleId) return null;
@@ -53,14 +52,12 @@ export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, p
   }, [userInfo?.id, puzzleId, answers.length]);
   
   const numberOfDisabledRows = disabledRows.map(e => e ? 1 : 0).reduce((a, b) => a + b, 0);
-  // console.log("numberOfDisabledRows:", numberOfDisabledRows);
   
   const getVChar = (i) => {
     if (!vword) return '';
     return (vword[i] || '').toString();
   };
   
-  // compute numeric maxInit once per answers/vword change (primitive result)
   const computedMaxInit = useMemo(() => {
     if (!Array.isArray(answers) || answers.length === 0) return 0;
     let init = 0;
@@ -74,10 +71,8 @@ export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, p
     return init;
   }, [answers, vword]);
   
-  // set max position local variable (no need setState for this)
   const maxInitPosition = computedMaxInit;
   
-  // initialize inputAns when answers / vword change — set only if different
   useEffect(() => {
     const newInputAns = answers.map((rowWord) => {
       const row = (rowWord || '').toString();
@@ -89,7 +84,6 @@ export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, p
       return same ? prev : newInputAns;
     });
     
-    // reset correctness array
     setIsCorrect(Array(answers.length).fill(false));
   }, [answers, vword]);
 
@@ -103,12 +97,11 @@ export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, p
 
 
 const handleInputChange = async (e, i, j) => {
-  if (disabledRows[i]) return; // already completed remotely
+  if (disabledRows[i]) return;
 
   const reward = 10;
   const newValue = (e.target.value || '').toUpperCase().slice(-1);
 
-  // cập nhật inputAns local
   setInputAns(prev => {
     const copy = prev.map(r => r.slice());
     if (!copy[i]) copy[i] = Array((answers[i] || '').length).fill('');
@@ -116,7 +109,6 @@ const handleInputChange = async (e, i, j) => {
     return copy;
   });
 
-  // tạo candidate dựa trên current inputAns (không chờ setState)
   const candidate = (inputAns[i] ? inputAns[i].slice() : Array((answers[i] || '').length).fill(''));
   candidate[j] = newValue;
   const word = candidate.join('');
@@ -132,16 +124,12 @@ const handleInputChange = async (e, i, j) => {
 
   if (!isRowCorrect || disabledRows[i]) return;
 
-  // -> hàng đúng và chưa disable: optimistic xử lý
-  // 1) disable row locally để UX mượt
   setDisabledRows(prev => {
     const cp = prev.slice();
     cp[i] = true;
     return cp;
   });
 
-  // 2) optimistic tăng điểm trên popup ngay (nếu setScoreFromServer được truyền)
-  //    dùng functional updater để tránh stale value
   if (typeof setScoreFromServer === 'function') {
     setScoreFromServer(prev => {
       const numericPrev = Number(prev) || 0;
@@ -149,7 +137,6 @@ const handleInputChange = async (e, i, j) => {
     });
   }
 
-  // 3) gọi server để persist (idempotent). server phải trả { already, points }
   try {
     const resp = await axiosInstance.post('/complete-row', {
       userId: userInfo.id,
@@ -158,37 +145,27 @@ const handleInputChange = async (e, i, j) => {
       reward
     });
 
-    // nếu server trả points, sync lại với server (prefer server value)
     if (resp?.data?.points != null && typeof setScoreFromServer === 'function') {
       setScoreFromServer(Number(resp.data.points));
     }
-
-    // nếu server nói đã completed trước đó (already), server có thể trả same points
-    // nothing more to do
   } catch (err) {
     console.error('complete-row error', err);
 
-    // rollback: nếu muốn hoàn tác việc disable & điểm khi lỗi
-    // (tùy UX: bạn có thể giữ disable và retry later; dưới đây là rollback)
     setDisabledRows(prev => {
       const cp = prev.slice();
       cp[i] = false;
       return cp;
     });
     if (typeof setScoreFromServer === 'function') {
-      // trừ lại điểm optimistic
       setScoreFromServer(prev => {
         const numericPrev = Number(prev) || 0;
         const newVal = numericPrev - reward;
         return newVal >= 0 ? newVal : 0;
       });
     }
-    // hiển thị lỗi cho user
     alert('Không thể lưu trạng thái hoàn thành hàng. Vui lòng thử lại.');
   }
 };
-
-
 
   useEffect(() => {
     if (Array.isArray(isCorrect) && isCorrect.length > 0 && isCorrect.every(v => v === true)) {
@@ -199,27 +176,8 @@ const handleInputChange = async (e, i, j) => {
 
   if (!Array.isArray(answers) || answers.length === 0) return <div>No puzzle data available.</div>;
 
-  const handleBuyHint = async (rowIndex) => {
-    console.log(`Buy hint for row ${rowIndex}`);
-    // console.log("userInfo in handleBuyHint:", userInfo.hints);
-    if(userInfo.point < 4) 
-    {      alert('Không đủ điểm để mua hint');
-      return;
-    }
-    try{
-      const response = await axiosInstance.post('/request-buy-hint', {
-        userId: userInfo.id,
-        rowId: puzzleId * 10 + rowIndex,
-        hintCost: userInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) ? 6 : 4
-    }
-      );
-      alert('Yêu cầu mua hint thành công');
-    } catch (error) {
-      console.error('Error purchasing hint:', error);
-      alert('Failed to purchase hint. Please try again.');
-    }
-  }
-  
+  // // XÓA: handleBuyHint đã được chuyển lên CrosswordContainer
+
   return (
   <form className="puzzle-form" style={{ display: 'grid', gridTemplateRows: `repeat(${answers.length}, 44px)` }}>
     {answers.map((rowWordRaw, i) => {
@@ -241,8 +199,6 @@ const handleInputChange = async (e, i, j) => {
                   key={`${i}-${j}`}
                   className={'puzzle-cell ' + (isCorrect[i] ? 'correct-answer' : '')}
                   style={{ gridRow: i + 1, gridColumn: currInitPosition + j + 1, ...colors }}
-                  // Nếu đang showAnswers thì hiện đáp án, nếu hàng đã disabled thì cũng hiện đáp án,
-                  // ngược lại hiện giá trị người chơi đang nhập (defaultValue).
                   value={
                     showAnswers
                       ? correctValue
@@ -250,7 +206,7 @@ const handleInputChange = async (e, i, j) => {
                   }
                   onChange={(e) => handleInputChange(e, i, j)}
                   maxLength={1}
-                  disabled={!!disabledRows[i]}   // vẫn giữ disabled cho hàng đã hoàn thành
+                  disabled={!!disabledRows[i]}
                   ref={el => {
                     if (inputRefs && inputRefs.current) {
                       if (!inputRefs.current[i]) inputRefs.current[i] = Array(36).fill(null);
@@ -261,26 +217,11 @@ const handleInputChange = async (e, i, j) => {
                 />
               );
             })}
-            {/* Button cuối hàng */}
-            {
-            !userInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) && <button
-              type="button"
-              style={{ gridRow: i + 1, gridColumn: currInitPosition + rowWord.length + 1 }}
-              onClick={() => handleBuyHint(i + 1)}
-            >
-              {userInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) ? '(Đã mua)' : 'Mua hint 1 (-4 điểm)'}
-            </button>
-            }
-            {
-              userInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) && 
-              <button
-              type="button"
-              style={{ gridRow: i + 1, gridColumn: currInitPosition + rowWord.length + 1 }}
-              onClick={() => handleBuyHint(i + 1)}
-            >
-              {userInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) &&  'Mua hint 2 (-6 điểm)'}
-            </button>
-            }
+            
+            {/* // // XÓA: Toàn bộ logic render button hint đã bị xóa khỏi đây.
+              // // Bạn không cần làm gì cả, code này đã bị loại bỏ.
+            */}
+
           </React.Fragment>
         );
       } catch (err) {
@@ -293,27 +234,24 @@ const handleInputChange = async (e, i, j) => {
 };
 
 
-// CrosswordContainer component renders the crossword puzzle container.
+// CrosswordContainer component (ĐÃ THÊM LOGIC RENDER BUTTON HINT)
 const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
-  // console.log("User Info in CrosswordContainer:", userInfo);
   const { getPuzzleById, showAnswers, loadingPuzzles, puzzlesError } = useContext(AppContext);
   const [count, setCount] = useState(0);
   const [verticalGuess, setVerticalGuess] = useState('');
   const [disableInput, setDisableInput] = useState(false);
-  // select puzzle by id, memoized — chỉ recompute khi puzzleId hoặc map thay đổi inside getPuzzleById
+  
   useEffect(() => {
     setDisableInput(userInfo?.puzzles?.includes(puzzleId));
-    // console.log(userInfo);
   }, [userInfo, puzzleId]);
+
   const puzzle = useMemo(() => {
     if (!puzzleId) return null;
     return getPuzzleById(puzzleId);
   }, [getPuzzleById, puzzleId]);
 
-  // safe defaults
   const vword = useMemo(() => {
     if (!puzzle) return '';
-    // puzzle.vword might be string or array — keep as string for DrawCrossword, adapt if needed
     return typeof puzzle.vword === 'string' ? puzzle.vword : (Array.isArray(puzzle.vword) ? puzzle.vword.join('') : '');
   }, [puzzle]);
 
@@ -321,19 +259,41 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
     return Array.isArray(puzzle?.answers) ? puzzle.answers : [];
   }, [puzzle]);
 
-  // initialize inputRefs with stable ref; length may change when answers length changes
   const inputRefs = useRef([]);
   if (!Array.isArray(inputRefs.current) || inputRefs.current.length !== Math.max(answers.length, 0)) {
     inputRefs.current = Array.from({ length: Math.max(answers.length, 0) }, () => Array(36).fill(null));
   }
 
-  // stable keyboard handler
   const handleKeyDown = useCallback((e, i, j) => {
     if (e.key === 'ArrowUp' && inputRefs.current[i - 1]?.[j]) inputRefs.current[i - 1][j].focus();
     else if (e.key === 'ArrowDown' && inputRefs.current[i + 1]?.[j]) inputRefs.current[i + 1][j].focus();
     else if (e.key === 'ArrowLeft' && inputRefs.current[i]?.[j - 1]) inputRefs.current[i][j - 1].focus();
     else if (e.key === 'ArrowRight' && inputRefs.current[i]?.[j + 1]) inputRefs.current[i][j + 1].focus();
   }, []);
+
+  // // THÊM MỚI: handleBuyHint đã được chuyển lên đây
+  const handleBuyHint = async (rowIndex) => {
+    console.log(`Buy hint for row ${rowIndex}`);
+    if(userInfo.point < 4) 
+    {     alert('Không đủ điểm để mua hint');
+      return;
+    }
+    try{
+      const response = await axiosInstance.post('/request-buy-hint', {
+        userId: userInfo.id,
+        rowId: puzzleId * 10 + rowIndex,
+        // // Logic tính toán chi phí hint (rowIndex đã là i + 1)
+        hintCost: userInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) ? 6 : 4
+      }
+      );
+      alert('Yêu cầu mua hint thành công');
+      // // TODO: Bạn cần có cơ chế cập nhật lại `userInfo` sau khi mua hint
+      // // ví dụ: gọi lại hàm fetch user info.
+    } catch (error) {
+      console.error('Error purchasing hint:', error);
+      alert('Failed to purchase hint. Please try again.');
+    }
+  }
 
   if (loadingPuzzles) return <div>Loading puzzles…</div>;
   if (puzzlesError) return <div>Error loading puzzles.</div>;
@@ -344,8 +304,6 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
     alert('Vui lòng nhập chữ hàng dọc.');
     return;
   }
-
-  // Chuyển hết về chữ thường để so sánh không phân biệt hoa/thường
   const normalizedGuess = verticalGuess.trim().toLowerCase();
   const correctVWord = vword.toLowerCase();
 
@@ -379,16 +337,53 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
           <h2 className="cp-title">Crossword Completion Progress</h2>
 
           <div className="cp-body">
-            <DrawCrossword
-              showAnswers={showAnswers}
-              handleKeyDown={handleKeyDown}
-              inputRefs={inputRefs}
-              puzzleId={puzzleId}
-              userInfo={userInfo}
-              setScoreFromServer={setScoreFromServer}
-              setCount={setCount}
-            />
+            
+            {/* // // SỬA ĐỔI: Thêm wrapper cho 2 cột */}
+            <div className="puzzle-with-hints">
+              
+              {/* // // Cột 1: Lưới ô chữ */}
+              <DrawCrossword
+                showAnswers={showAnswers}
+                handleKeyDown={handleKeyDown}
+                inputRefs={inputRefs}
+                puzzleId={puzzleId}
+                userInfo={userInfo}
+                setScoreFromServer={setScoreFromServer}
+                setCount={setCount}
+              />
 
+              {/* // // THÊM MỚI: Cột 2: Các button hint */}
+              <div className="hint-button-column">
+                {/* Lặp qua 'answers' để tạo số lượng button tương ứng */}
+                {answers.map((_, i) => (
+                  <div key={`hint-btn-wrapper-${i}`} className="hint-button-wrapper">
+                    {userInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) ? (
+                      // Đã mua hint 1 -> Hiển thị nút mua hint 2
+                      <button
+                        type="button"
+                        className="btn hint-button" // // Dùng class mới
+                        onClick={() => handleBuyHint(i + 1)} // // i + 1 là rowIndex (1-based)
+                      >
+                        Mua hint 2 (-6 điểm)
+                      </button>
+                    ) : (
+                      // Chưa mua hint 1 -> Hiển thị nút mua hint 1
+                      <button
+                        type="button"
+                        className="btn hint-button" // // Dùng class mới
+                        onClick={() => handleBuyHint(i + 1)}
+                      >
+                        Mua hint 1 (-4 điểm)
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div> {/* // // Kết thúc .hint-button-column */}
+
+            </div> {/* // // Kết thúc .puzzle-with-hints */}
+
+
+            {/* // // Phần footer giữ nguyên */}
             <div className="cp-footer">
               <div className="completed-count">Đã hoàn thành: <strong>{count}</strong></div>
 
