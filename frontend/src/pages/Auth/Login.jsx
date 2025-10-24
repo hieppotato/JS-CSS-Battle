@@ -17,7 +17,7 @@ const Login = ({fetchProfile}) => {
       localStorage.setItem('user', JSON.stringify(res.data.user));
       localStorage.setItem("refresh_token", res.data.session.refresh_token);
       await fetchProfile();
-      navigate('/home');
+      window.location.href = '/home';
     } else {
       setError('Login failed: No token returned');
     }
