@@ -405,12 +405,11 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
                 {answers.map((_, i) => (
                   <div key={`hint-btn-wrapper-${i}`} className="hint-button-wrapper">
                     {userInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) ? (
-                      // Đã mua hint 1 -> Hiển thị nút mua hint 2
-                      countOccurrences(userInfo.hints, toString(puzzleId * 10 + i + 1) < 2) && 
                       <button
                         type="button"
                         className="btn hint-button" // // Dùng class mới
                         onClick={() => handleBuyHint(i + 1)} // // i + 1 là rowIndex (1-based)
+                        hidden={!countOccurrences(userInfo.hints, toString(puzzleId * 10 + i + 1) > 1) }
                       >
                         Mua hint 2 (-6 điểm)
                       </button>
