@@ -38,6 +38,7 @@ const Home = ({ puzzles, userInfo }) => {
         userId,
         questionId,
         cssPoint: Number(cssPoint),
+        userName: userInfo.name
       });
       alert(`Yêu cầu nộp bài ${questionId} đã được gửi thành công!`);
       handlePointChange(questionId, "");

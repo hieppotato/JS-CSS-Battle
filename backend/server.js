@@ -682,13 +682,13 @@ app.get("/get-requests", async (req, res) => {
 
 app.post("/request-submit-css", async (req, res) => { 
   try {
-    const { userId, questionId, cssPoint } = req.body;
+    const { userId, questionId, cssPoint, userName } = req.body;
     if (!userId || !questionId || cssPoint == null) {
       return res.status(400).json({ error: "Missing parameters" });
     }
     const { data, error } = await supabase
       .from("requests")
-      .insert([{ userId, questionId, type: "submit_css", status: "pending", cssPoint }])
+      .insert([{ userName, userId, questionId, type: "submit_css", status: "pending", cssPoint }])
       .select()
       .maybeSingle();
     if (error) throw error;
