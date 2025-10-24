@@ -63,7 +63,6 @@ function PuzzleGame({userInfo}) {
       
       {/* Footer */}
 
-      <ColorConfiguration />
     </>
   )
 }
