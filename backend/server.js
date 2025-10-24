@@ -5,8 +5,6 @@ const axios = require('axios');
 const { supabase } = require('./config/db');
 const app = express();
 
-const cors = require("cors");
-
 const allowedOrigins = [
   "https://js-css-battle.vercel.app"
 ];
