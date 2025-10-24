@@ -409,7 +409,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
                         type="button"
                         className="btn hint-button" // // Dùng class mới
                         onClick={() => handleBuyHint(i + 1)} // // i + 1 là rowIndex (1-based)
-                        hidden={!(countOccurrences(userInfo.hints, toString(puzzleId * 10 + i + 1) > 1)) }
+                        hidden={!(countOccurrences(userInfo?.hints, toString(puzzleId * 10 + i + 1) > 1)) }
                       >
                         Mua hint 2 (-6 điểm)
                       </button>
