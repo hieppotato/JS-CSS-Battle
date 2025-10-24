@@ -6,7 +6,8 @@ const { supabase } = require('./config/db');
 const app = express();
 
 const allowedOrigins = [
-  "https://js-css-battle.vercel.app"
+  "https://js-css-battle.vercel.app",
+  "http://localhost:5173"
 ];
 
 app.use(cors({

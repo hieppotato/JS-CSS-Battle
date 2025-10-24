@@ -339,10 +339,13 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   if (!puzzle) return <div>Puzzle not found.</div>;
 
   function countOccurrences(array, item) {
+    const vitem = item.toString();
     return array.reduce((count, current) => {
-      return current === item ? count + 1 : count;
+      return current === vitem ? count + 1 : count;
     }, 0);
   }
+
+  // console.log(countOccurrences(userInfo.hints, "111"));
 
   const handleVerticalSubmit = async () => {
   if (!verticalGuess.trim()) {
@@ -407,9 +410,9 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
                         type="button"
                         className="btn hint-button" // // Dùng class mới
                         onClick={() => handleBuyHint(i + 1)} // // i + 1 là rowIndex (1-based)
-                        hidden={(countOccurrences(userInfo?.hints, toString(puzzleId * 10 + i + 1) > 1))}
+                        hidden={(countOccurrences(userInfo.hints, puzzleId * 10 + i + 1) > 1)}
                       >
-                        Mua hint 2 (-6 điểm) đã mua {countOccurrences(userInfo?.hints, toString(puzzleId * 10 + i + 1))} lần
+                        Mua hint 2 (-6 điểm) {countOccurrences(userInfo.hints, puzzleId * 10 + i + 1)}
                       </button>
                     ) : (
                       // Chưa mua hint 1 -> Hiển thị nút mua hint 1
