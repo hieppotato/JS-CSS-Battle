@@ -10,7 +10,8 @@ import PuzzleGame from "./pages/PuzzleGame/PuzzleGame";
 import { supabase } from "./utils/supabaseClient";
 import PrivateRoute from './components/PrivateRoute';
 import CreatePuzzle from "./pages/PuzzleGame/CreatePuzzle";
-import UserDashboard from './pages/Home/UserDashboard';
+// import UserDashboard from './pages/Home/UserDashboard';
+import AdminRequests from "./pages/Admin/AdminRequests";
 
 const App = () => {
 
@@ -111,7 +112,8 @@ const fetchProfile = useCallback(async () => {
           <Route path="/create-puzzle" element={<CreatePuzzle/>} />
           <Route path="/home" element={<Home/>}/>
           <Route path="/login" element={<Login/>}/>
-          <Route path="/dashboard" element={<UserDashboard/>}/>
+          {/* <Route path="/dashboard" element={<UserDashboard/>}/> */}
+          <Route path="/admin/requests" element={<PrivateRoute><AdminRequests/></PrivateRoute>}/>
         </Routes>
       </Router>
     </div>

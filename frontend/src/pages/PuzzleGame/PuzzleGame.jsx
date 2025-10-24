@@ -1,5 +1,6 @@
 import { use, useContext, useEffect, useState } from 'react'
 import '../../styles/main.css'
+import "./PuzzleGame.css"
 
 import Navbar from '../../components/Navbar.jsx'
 import PuzzleFormContainer from '../../components/PuzzleFormContainer.jsx'
@@ -31,19 +32,7 @@ function PuzzleGame({userInfo}) {
   return (
     <>
       {/* Navigation Bar */}
-      <div className="container-fluid" id="mainContainer">
-        <div className="crossword-container d-flex flex-column">
-          
-          <div className="h-100 d-flex align-items-center justify-content-center">
-            <div className="progress" style={{ width: '60%' }}>
-              <div className="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-                aria-label="Animated striped example" style={{ width: '0%' }} aria-valuenow="21" aria-valuemin="0"
-                aria-valuemax="35"></div>
-            </div>
-          </div>
-        </div>
-
-
+      <div className="puzzle-page" id="mainContainer">
         <div className="m-2"></div>
         <CrosswordContainer setScoreFromServer={setScoreFromServer} key={crossword} puzzleId={puzzleId} userInfo={userInfo}/>
         <ScorePopup
@@ -54,9 +43,6 @@ function PuzzleGame({userInfo}) {
             size="md"
         />
       </div >
-      
-      {/* Footer */}
-
     </>
   )
 }

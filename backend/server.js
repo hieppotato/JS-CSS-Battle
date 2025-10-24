@@ -21,7 +21,7 @@ app.post("/signup", async (req, res) => {
       },
     });
     
-    await supabase.from('profiles').insert([{id: data.user.id, name, point: 0}]);
+    await supabase.from('profiles').insert([{id: data.user.id, name, point: 0, role: "user"}]);
 
     if (error) return res.status(400).json({ error: error.message });
 
@@ -212,7 +212,7 @@ app.get('/saved_code', async (req, res) => {
 
 app.get('/questions/:id', async (req, res) => {
   const id = req.params.id;
-  console.log("Fetching question with id:", id);
+  // console.log("Fetching question with id:", id);
   try {
     const { data, error } = await supabase
       .from('questions')
@@ -314,7 +314,7 @@ app.put("/buy-image", async (req, res) => {
       return res.status(400).json({ error: "Missing parameters" });
     }
 
-    console.log('Buying image:', { userId, imageCost, image_url });
+    // console.log('Buying image:', { userId, imageCost, image_url });
 
     const { data, error } = await supabase
       .rpc('buy_image_rpc', {
@@ -538,7 +538,7 @@ app.post('/complete-row', async (req, res) => {
       .insert({ user_id: userId, puzzle_id: puzzleId, row_index: rowIndex })
       .select()
       .maybeSingle();
-    console.log('Insert completed_rows response:', insertResp);
+    // console.log('Insert completed_rows response:', insertResp);
     if (insertResp.error) {
       const errMessage = insertResp.error.message || '';
       if (errMessage.includes('duplicate key')) {
@@ -693,13 +693,13 @@ app.put("/approve-css-submission", async (req, res) => {
       .maybeSingle();
     if(profileError) throw profileError;
 
-    console.log("userData", profile);
+    // console.log("userData", profile);
 
     const rowArr = Array.isArray(profile.rows) ? profile.rows : [];
     const newPoint = profile.point + Number(cssPoint);
     const newRow = [...rowArr, rowId];
 
-    console.log(profile.point, newPoint);
+    // console.log(profile.point, newPoint);
 
     const {data, error} = await supabase
     .from("profiles")

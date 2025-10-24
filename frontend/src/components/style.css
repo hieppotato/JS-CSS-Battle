@@ -3,9 +3,6 @@
 /* reset nhỏ */
 .page-root {
   min-height: 100vh;
-  /* MODIFIED: Chuyển sang nền xanh blue đậm */
-  background: linear-gradient(180deg, #0d1b2a 0%, #001220 100%); 
-  /* MODIFIED: Chuyển sang màu chữ xanh nhạt */
   color: #e0f2fe; 
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   padding: 32px;
@@ -306,3 +303,82 @@ button.btn {
 }
 
 /* PHẦN CSS BỊ TRÙNG LẶP BÊN DƯỚI ĐÃ ĐƯỢC XÓA */
+.puzzle-container {
+    max-width: 700px;
+    margin: 60px auto;
+    padding: 30px;
+    background-color: #1e1e2e;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+.puzzle-title {
+    color: #fff;
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.puzzle-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.puzzle-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.puzzle-input {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #555;
+    background-color: #2a2a3b;
+    color: #fff;
+}
+
+.puzzle-input::placeholder {
+    color: #aaa;
+}
+
+.puzzle-btn-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.puzzle-btn {
+    flex: 1;
+    padding: 10px 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.puzzle-btn.btn-primary {
+    background-color: #007bff;
+    color: white;
+    border: none;
+}
+
+.puzzle-btn.btn-primary:hover {
+    background-color: #0056d2;
+}
+
+.puzzle-btn.btn-secondary {
+    background-color: #444;
+    color: white;
+    border: none;
+}
+
+.puzzle-btn.btn-secondary:hover {
+    background-color: #666;
+}
+
+.text-white {
+    color: #fff !important;
+}

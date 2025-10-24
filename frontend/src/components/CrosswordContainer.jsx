@@ -2,7 +2,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import { AppContext } from '../AppProvider';
 import { stopTimerHandler } from '../scripts/timer-crossword';
 import axiosInstance from '../utils/axiosInstance';
-import './style.css'; // // Đảm bảo bạn đã import file css
+import './style.css'; 
 
 // DrawCrossword component (ĐÃ LOẠI BỎ LOGIC RENDER BUTTON)
 export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, puzzleId, userInfo, setScoreFromServer, setCount }) => {
@@ -49,7 +49,6 @@ export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, p
         const arr = Array(Math.max(prev.length, answers.length)).fill(false);
         completed.forEach(idx => { if (typeof idx === 'number') arr[idx] = true; });
 
-        // update count trực tiếp khi đã tính arr
         if (typeof setCount === 'function') {
           setCount((arr || []).filter(Boolean).length);
         }
@@ -319,7 +318,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
     }
     try{
       const response = await axiosInstance.post('/request-buy-hint', {
-        userId: userInfo.id,
+        userId: userInfo.name,
         rowId: puzzleId * 10 + rowIndex,
         // // Logic tính toán chi phí hint (rowIndex đã là i + 1)
         hintCost: userInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) ? 6 : 4
@@ -370,7 +369,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   
 
     return (
-    <div>
+    <div className='page-root'>
       <div className="draw-center">
         <div className="card cp-card">
           <h2 className="cp-title">Crossword Completion Progress</h2>
@@ -444,6 +443,13 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
                   </button>
                 </div>
               )}
+              <button
+                    type="button"
+                    onClick={() => window.location.href = '/home'}
+                    className="btn btn-primary justify-center mt-4"
+                  >
+                    Quay về trang chủ
+                  </button>
             </div>
           </div>
         </div>
