@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 import { useNavigate } from "react-router-dom";
-import "../Home/Home.css"; // Dùng lại style chung (có style cho login luôn)
+import "../Home/home.css"; // Dùng lại style chung (có style cho login luôn)
 
 const Login = ({ fetchProfile }) => {
   const navigate = useNavigate();

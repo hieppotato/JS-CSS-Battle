@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 import dayjs from "dayjs";
-import "../Home/Home.css"; // ✅ Dùng lại style của Home
+import "../Home/home.css"; // ✅ Dùng lại style của Home
 
 const AdminRequests = () => {
   const [requests, setRequests] = useState([]);
