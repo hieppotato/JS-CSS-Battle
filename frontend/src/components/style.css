@@ -1,147 +1,244 @@
-/* --- TỔNG THỂ VÀ TRUNG TÂM --- */
-body {
-  background-color: #0a192f; /* Màu nền xanh đen (dark navy) */
-  color: #e0e0e0; /* Màu chữ trắng ngà */
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 20px;
-  display: flex;
-  justify-content: center; /* Căn giữa ngang cho toàn bộ trang */
-  align-items: flex-start; /* Căn trên cho nội dung */
+/* crossword.css - TONE XANH NƯỚC (AQUA), RESPONSIVE */
+
+/* reset nhỏ */
+.page-root {
   min-height: 100vh;
+  /* MODIFIED: Chuyển sang nền xanh blue đậm */
+  background: linear-gradient(180deg, #0d1b2a 0%, #001220 100%); 
+  /* MODIFIED: Chuyển sang màu chữ xanh nhạt */
+  color: #e0f2fe; 
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  padding: 32px;
+  box-sizing: border-box;
 }
 
-/* Container chính của toàn bộ ứng dụng (trong CrosswordContainer) */
-.container-md.actual {
-  width: 100%;
-  max-width: 1200px; /* Giới hạn chiều rộng tối đa */
-  margin: 20px auto;
-}
-
-/* Container bọc lưới puzzle (trong DrawCrossword) */
-.puzzle-container {
-  display: flex;
-  justify-content: center; /* Căn giữa lưới puzzle theo chiều ngang */
-  align-items: center;
-  padding: 30px;
-  margin: 20px 0; /* Tách biệt với phần đoán hàng dọc */
-  background-color: #1a2a44; /* Nền container hơi sáng hơn body */
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  max-width: 100%; /* Đảm bảo không tràn */
-  overflow-x: auto; /* Cho phép cuộn ngang nếu grid quá rộng */
-}
-
-/* Form lưới crossword */
-.puzzle-form {
-  display: grid; /* Đã có trong inline style, nhưng để đây cho rõ */
-  gap: 3px; /* Khoảng cách nhỏ giữa các ô */
-}
-
-/* --- CÁC Ô INPUT --- */
-.puzzle-cell {
-  width: 40px;
-  height: 40px;
-  font-size: 1.5rem; /* Chữ to, rõ ràng */
-  text-align: center;
-  text-transform: uppercase;
-  background-color: #2c3e50; /* Nền ô màu xanh xám */
-  color: #ffffff; /* Chữ trong ô màu trắng */
-  border: 2px solid #4a5568; /* Viền ô */
-  border-radius: 4px;
-  padding: 0; /* Xóa padding mặc định */
-  box-sizing: border-box; /* Tính cả border vào kích thước */
-  transition: all 0.2s ease;
-}
-
-/* Khi focus vào ô */
-.puzzle-cell:focus {
-  outline: none;
-  border-color: #64ffda; /* Viền màu xanh mint sáng */
-  box-shadow: 0 0 10px #64ffda;
-  background-color: #34495e;
-}
-
-/* Ô đã bị vô hiệu hóa (đoán đúng hàng) */
-.puzzle-cell:disabled {
-  background-color: #1f2a38; /* Nền tối hơn */
-  color: #7f8c8d; /* Chữ mờ đi */
-  border-color: #2c3e50;
-}
-
-/* Class 'correct-answer' (nếu bạn muốn dùng nó) */
-.puzzle-cell.correct-answer {
-  /* :disabled đã xử lý việc này, nhưng có thể thêm
-     ví dụ: một màu nền xanh lá cây nếu muốn */
-  /* background-color: #27ae60; */
-}
-
-
-/* --- CÁC NÚT BẤM --- */
-.hint-button {
-  height: 40px; /* Bằng chiều cao ô */
-  margin-left: 10px; /* Cách lưới 1 chút */
-  padding: 0 12px;
-  background-color: #3498db; /* Màu xanh dương cho nút */
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 0.8rem;
-  transition: background-color 0.2s ease;
-  white-space: nowrap; /* Tránh vỡ chữ */
-}
-
-.hint-button:hover {
-  background-color: #2980b9;
-}
-
-/* --- PHẦN ĐOÁN HÀNG DỌC --- */
-/* Căn giữa phần input đoán hàng dọc và nút Nộp */
-.container-md.actual > div:nth-of-type(3) { /* Nhắm tới <> chứa input/button */
-  margin-top: 20px;
-  text-align: center;
+/* center container */
+.draw-center {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  align-items: flex-start;
+  width: 100%;
 }
 
-.container-md.actual input[name="verticalGuess"] {
-  padding: 10px;
-  font-size: 1rem;
+/* card wrapper */
+.cp-card {
+  max-width: 980px;
+  width: 100%;
+  /* MODIFIED: Nền card màu blue đậm trong suốt */
+  background: linear-gradient(180deg, rgba(10, 25, 40, 0.7), rgba(0, 10, 20, 0.6));
+  /* MODIFIED: Viền màu xanh aqua nhạt */
+  border: 1px solid rgba(72, 202, 228, 0.15);
+  border-radius: 14px;
+  padding: 80px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+/* title */
+.cp-title {
+  margin: 0 0 12px;
+  /* MODIFIED: Màu tiêu đề xanh aqua sáng */
+  color: #ade8f4;
+  font-size: 24px;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+/* body */
+.cp-body {
+  display: flex;
+  justify-items: center;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+/* puzzle-form container */
+.puzzle-form {
+  display: grid;
+  /* MODIFIED: Khoảng cách ô (gap) để "căn đều" */
+  gap: 8px; 
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  background: rgba(0,0,0,0.18);
+  border-radius: 10px;
+  /* MODIFIED: Viền xanh aqua */
+  border: 1px solid rgba(72, 202, 228, 0.1);
+  overflow: auto;
+}
+
+/* default cell style */
+.puzzle-cell {
+  /* MODIFIED: Tăng kích thước ô chữ */
+  width: 55px;
+  height: 55px;
+  box-sizing: border-box;
+  /* MODIFIED: Nền ô màu xanh blue đậm */
+  background: linear-gradient(180deg, rgba(10, 40, 60, 0.9), rgba(0, 20, 30, 0.9));
+  /* MODIFIED: Viền ô màu xanh aqua */
+  border: 1px solid rgba(72, 202, 228, 0.2);
+  /* MODIFIED: Màu chữ xanh nhạt */
+  color: #e0f2fe;
+  text-align: center;
+  vertical-align: middle;
+  /* MODIFIED: Tăng cỡ chữ trong ô */
+  font-size: 24px;
+  font-weight: 600;
   border-radius: 4px;
-  border: 1px solid #4a5568;
-  background-color: #2c3e50;
-  color: white;
-}
-
-.container-md.actual input[name="verticalGuess"]:focus {
   outline: none;
-  border-color: #64ffda;
+  transition: transform .08s ease, box-shadow .08s ease;
 }
 
-.container-md.actual button {
-  padding: 10px 20px;
-  font-size: 1rem;
-  background-color: #64ffda; /* Màu xanh mint nổi bật */
-  color: #0a192f; /* Chữ màu nền */
-  border: none;
-  border-radius: 4px;
+/* focus */
+.puzzle-cell:focus {
+  transform: translateY(-2px);
+  /* MODIFIED: Đổ bóng xanh aqua khi focus */
+  box-shadow: 0 6px 18px rgba(72, 202, 228, 0.2);
+  border-color: rgba(100, 220, 240, 0.5);
+}
+
+/* correct answer highlight */
+.correct-answer {
+  /* MODIFIED: Nền màu xanh aqua sáng khi trả lời đúng */
+  background: linear-gradient(180deg, #00b4d8, #0077b6);
+  /* MODIFIED: Viền xanh aqua nhạt */
+  border: 1px solid rgba(173, 232, 244, 0.3);
+  /* MODIFIED: Màu chữ trắng */
+  color: #ffffff;
+}
+
+/* buttons (buy hint, submit) */
+button.btn {
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.2s ease;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 700;
+  font-size: 14px;
 }
 
-.container-md.actual button:hover {
-  background-color: #52d1b8;
+/* primary action */
+.btn-primary {
+  /* MODIFIED: Nút chính màu xanh aqua */
+  background: linear-gradient(180deg, #48cae4, #0096c7);
+  color: #02101a;
+  box-shadow: 0 8px 20px rgba(0, 150, 199, 0.2);
 }
 
-/* Hiển thị số hàng đã hoàn thành (count) */
-.container-md.actual > div:nth-of-type(2) {
-    text-align: center;
-    font-size: 1.2rem;
-    margin-top: 15px;
-    color: #64ffda;
-    font-weight: bold;
+/* hint button style override to look subtle */
+/* === THÊM MỚI: Bố cục cột hint === */
+
+/* Wrapper cho 2 cột: Lưới puzzle + Cột hint */
+.puzzle-with-hints {
+  display: flex;
+  flex-direction: row;
+  justify-content: center; /* Căn giữa 2 cột với nhau */
+  align-items: flex-start;
+  gap: 24px; /* Khoảng cách giữa lưới và cột hint */
 }
+
+/* Cột chứa các button hint */
+.hint-button-column {
+  display: flex;
+  flex-direction: column;
+  /* LƯU Ý: 
+    gap và padding-top phải khớp với .puzzle-form 
+    để các button thẳng hàng với các ô chữ.
+  */
+  gap: 8px; /* <-- Phải bằng 'gap' của .puzzle-form */
+  padding-top: 40px; /* <-- Phải bằng 'padding-top' của .puzzle-form */
+}
+
+/* Wrapper cho mỗi button, dùng để căn chỉnh chiều cao */
+.hint-button-wrapper {
+  /* Chiều cao phải = chiều cao 1 ô .puzzle-cell */
+  height: 55px; /* <-- Phải bằng 'height' của .puzzle-cell */
+  display: flex;
+  align-items: center; /* Căn giữa button theo chiều dọc */
+}
+
+.hint-button {
+  /* Yêu cầu: Width dài hơn */
+  width: 170px; 
+  text-align: center;
+  
+  /* Điều chỉnh lại padding/font từ class .btn */
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 600;
+
+  /* Style màu (giống style cũ bạn đã có) */
+  background: linear-gradient(180deg, #caf0f8, #ade8f4);
+  color: #023047;
+  
+  /* Yêu cầu: Hiệu ứng hover (thêm transition) */
+  transition: all 0.2s ease;
+  opacity: 0.85; /* Làm mờ đi 1 chút */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  border: none; /* Đảm bảo không có viền */
+  cursor: pointer;
+  border-radius: 6px; /* Giữ bo góc */
+}
+
+/* Yêu cầu: Hiệu ứng hover */
+.hint-button:hover {
+  opacity: 1; /* Rõ nét khi hover */
+  transform: scale(1.02); /* Phóng to nhẹ */
+  box-shadow: 0 5px 15px rgba(0, 150, 199, 0.2); /* Đổ bóng màu aqua */
+}
+
+/* footer row: completed count & vertical guess */
+.cp-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+
+/* count display */
+.completed-count {
+  /* MODIFIED: Màu chữ xanh aqua nhạt */
+  color: #ade8f4;
+  font-size: 14px;
+}
+
+/* vertical guess row */
+.vertical-guess-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* vertical input */
+.vertical-input {
+  flex: 1;
+  min-width: 180px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  /* MODIFIED: Viền xanh aqua */
+  border: 1px solid rgba(100, 220, 240, 0.2);
+  background: rgba(255,255,255,0.04);
+  /* MODIFIED: Chữ xanh nhạt */
+  color: #e0f2fe;
+  outline: none;
+  font-size: 14px;
+}
+
+/* vertical input focus */
+.vertical-input:focus {
+  /* MODIFIED: Đổ bóng xanh aqua */
+  box-shadow: 0 8px 18px rgba(0, 150, 199, 0.15);
+  border-color: rgba(72, 202, 228, 0.4);
+}
+
+/* mobile responsiveness */
+@media (max-width: 720px) {
+  .cp-card { padding: 12px; border-radius: 10px; }
+  /* MODIFIED: Tăng kích thước ô chữ trên mobile */
+  .puzzle-cell { width: 40px; height: 40px; font-size: 18px; }
+  .vertical-input { min-width: 120px; }
+  .cp-title { font-size: 18px; }
+}
+
+/* PHẦN CSS BỊ TRÙNG LẶP BÊN DƯỚI ĐÃ ĐƯỢC XÓA */

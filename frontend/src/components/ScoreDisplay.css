@@ -1,0 +1,93 @@
+/* ScoreDisplay.css */
+
+/* * Nút chính, cố định ở góc trên bên phải
+ * (Thay thế: fixed z-[999] top-6 right-6 flex items-end group ...)
+ */
+.score-display-button {
+  position: fixed;
+  z-index: 999;
+  top: 1.5rem;  /* 24px */
+  right: 1.5rem; /* 24px */
+  
+  display: flex;
+  align-items: flex-end;
+  
+  /* Reset lại style của button */
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  
+  /* Hiệu ứng scale khi hover */
+  transition: transform 0.2s ease-in-out;
+}
+
+.score-display-button:hover {
+  /* (Thay thế: hover:scale-105) */
+  transform: scale(1.05);
+}
+
+/* Lớp bọc bên ngoài để tạo margin */
+.score-orb-wrapper {
+  /* (Thay thế: m-4) */
+  margin: 1rem; /* 16px */
+}
+
+/* * Hình tròn hiển thị điểm (orb)
+ * (Thay thế: relative rounded-full shadow-2xl flex items-center justify-center)
+ */
+.score-orb {
+  position: relative;
+  border-radius: 12px; /* rounded-full */
+  width: 80px;
+  height: 50px;
+  /* (Thay thế: shadow-2xl) */
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); 
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* * Màu gradient xanh aqua (match với theme)
+   * (Thay thế: bg-gradient-to-br from-[#48cae4] to-[#0096c7])
+   */
+  background-image: linear-gradient(to bottom right, #48cae4, #0096c7);
+  
+  /* Hiệu ứng đổi shadow khi hover */
+  transition: box-shadow 0.2s ease;
+}
+
+/* * Hiệu ứng shadow khi hover lên nút cha
+ * (Thay thế: group-hover:shadow-lg)
+ */
+.score-display-button:hover .score-orb {
+  /* (Thay thế: shadow-lg) */
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* * Lớp bọc nội dung text bên trong
+ * (Thay thế: text-center select-none text-[#02101a])
+ */
+.score-text-content {
+  text-align: center;
+  user-select: none;
+  color: #02101a; /* Màu text của .btn-primary trong theme */
+}
+
+/*
+ * Số điểm (chữ to)
+ * (Thay thế: font-extrabold leading-none)
+ */
+.score-text-number {
+  font-weight: 800;
+  line-height: 1;
+}
+
+/*
+ * Chữ "Điểm" (chữ nhỏ)
+ * (Thay thế: opacity-90 mt-0.5)
+ */
+.score-text-label {
+  opacity: 0.9;
+  margin-top: 0.125rem; /* 2px */
+}

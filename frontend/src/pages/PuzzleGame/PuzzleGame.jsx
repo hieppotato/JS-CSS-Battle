@@ -31,13 +31,9 @@ function PuzzleGame({userInfo}) {
   return (
     <>
       {/* Navigation Bar */}
-      <Navbar />
-
       <div className="container-fluid" id="mainContainer">
         <div className="crossword-container d-flex flex-column">
-          <div className="d-flex justify-content-center">
-            <h2>Crossword Completion Progress</h2>
-          </div>
+          
           <div className="h-100 d-flex align-items-center justify-content-center">
             <div className="progress" style={{ width: '60%' }}>
               <div className="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
@@ -49,8 +45,6 @@ function PuzzleGame({userInfo}) {
 
 
         <div className="m-2"></div>
-
-        Crossword
         <CrosswordContainer setScoreFromServer={setScoreFromServer} key={crossword} puzzleId={puzzleId} userInfo={userInfo}/>
         <ScorePopup
             visible={true}
