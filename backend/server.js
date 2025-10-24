@@ -488,13 +488,13 @@ app.put('/approve-buy-hint', async (req, res) => {
 
 app.post('/request-buy-hint', async (req, res) => {
   try {
-    const { userId, rowId, hintCost } = req.body;
+    const { userId, rowId, hintCost, userName } = req.body;
     if (!userId || rowId == null) {
       return res.status(400).json({ error: "Missing parameters" });
     }
     const { data, error } = await supabase
       .from('requests')
-      .insert([{ userId, questionId: rowId, type: 'buy_hint', status: 'pending', hintCost }])
+      .insert([{ userName, userId, questionId: rowId, type: 'buy_hint', status: 'pending', hintCost }])
       .select()
       .maybeSingle();
     if (error) throw error;

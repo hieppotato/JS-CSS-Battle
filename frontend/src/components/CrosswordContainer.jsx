@@ -318,10 +318,11 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
     }
     try{
       const response = await axiosInstance.post('/request-buy-hint', {
-        userId: userInfo.name,
+        userId: userInfo.id,
         rowId: puzzleId * 10 + rowIndex,
         // // Logic tính toán chi phí hint (rowIndex đã là i + 1)
-        hintCost: userInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) ? 6 : 4
+        hintCost: userInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) ? 6 : 4,
+        userName: userInfo.name
       }
       );
       alert('Yêu cầu mua hint thành công');

@@ -108,7 +108,7 @@ const AdminRequests = () => {
                       <td>{req.type}</td>
                       <td className="text-yellow-400 font-semibold">{req.status}</td>
                       <td>{req.hintCost ?? "-"}</td>
-                      <td className="text-xs">{req.userId ?? req.user_id}</td>
+                      <td className="text-xs">{req.userName}</td>
                       <td>{req.cssPoint ?? "-"}</td>
                       <td className="text-center">
                         <button
