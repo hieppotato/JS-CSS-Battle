@@ -200,6 +200,23 @@ const handleInputChange = async (e, i, j) => {
   useEffect(() => {
     if (Array.isArray(isCorrect) && isCorrect.length > 0 && isCorrect.every(v => v === true)) {
       stopTimerHandler(timerRef, setTimerRef);
+      const FinishPuzzle = async () => {
+        try{
+        const response = await axiosInstance.post('/complete-vword', {
+          userId: userInfo.id,
+          puzzleId,
+          reward: 100
+        });
+        if (response?.data?.points != null && typeof setScoreFromServer === 'function') {
+          setScoreFromServer(Number(response.data.points));
+          setDisableInput(response.data.puzzles?.includes(puzzleId));
+        }
+      } catch (error) {
+        console.error('Error completing vertical word:', error);
+        alert('Đã xảy ra lỗi khi gửi đáp án. Vui lòng thử lại.');
+      }
+    }
+    FinishPuzzle();
       alert('Congrats! You finished the crossword.');
     }
   }, [isCorrect, timerRef, setTimerRef]);
