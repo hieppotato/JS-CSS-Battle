@@ -7,6 +7,7 @@ import './style.css'; // ✅ import file CSS riêng
 const PersonalisedPuzzleContainer = () => {
     const { vword } = useContext(AppContext);
     const [vwordInput, setVwordInput] = useState(vword.toUpperCase());
+    const [trueVwordInput, setTrueVwordInput] = useState('');
     const [currForm, setCurrForm] = useState();
     const [jsonForm, setJsonForm] = useState();
     const [showJsonText, setShowJsonText] = useState(false);
@@ -19,7 +20,7 @@ const PersonalisedPuzzleContainer = () => {
                 answers: Array(vwordInput.length).fill(0).map((_, i) => `Palabra ${i + 1}`)
             };
             setJsonForm(JSON.stringify(jsonData, null, 2));
-            setCurrForm(<PersonalisedPuzzleForm key={vwordInput} {...{ vwordInput, setShowJsonText }} />);
+            setCurrForm(<PersonalisedPuzzleForm key={vwordInput} {...{ trueVwordInput, vwordInput, setShowJsonText }} />);
         } else {
             alert('Something went wrong... Did you load the vertical word?');
             setCurrForm(undefined);
@@ -35,9 +36,16 @@ const PersonalisedPuzzleContainer = () => {
                     <input
                         type="text"
                         className="puzzle-input"
-                        placeholder="Palabra vertical (pista)"
+                        placeholder="Từ hàng dọc lộn xộn"
                         value={vwordInput}
                         onChange={(e) => setVwordInput(e.target.value.toUpperCase())}
+                    />
+                    <input
+                        type="text"
+                        className="puzzle-input"
+                        placeholder="Từ hàng dọc chuẩn"
+                        value={trueVwordInput}
+                        onChange={(e) => setTrueVwordInput(e.target.value.toUpperCase())}
                     />
                     <button type="button" className="btn btn-primary puzzle-btn" onClick={handleGenerateForm}>
                         🚀 Start!
@@ -52,7 +60,7 @@ const PersonalisedPuzzleContainer = () => {
     );
 };
 
-const PersonalisedPuzzleForm = ({ vwordInput, setShowJsonText }) => {
+const PersonalisedPuzzleForm = ({ trueVwordInput, vwordInput, setShowJsonText }) => {
     const { setVword, setAnswers } = useContext(AppContext);
     const [inputAnswers, setInputAnswers] = useState(Array(vwordInput.length).fill(''));
 
@@ -64,7 +72,8 @@ const PersonalisedPuzzleForm = ({ vwordInput, setShowJsonText }) => {
         try {
             await axiosInstance.post('/save-puzzle', {
                 vword: vwordInput,
-                answers: inputAnswers
+                answers: inputAnswers,
+                true_vword : trueVwordInput
             });
             alert('Puzzle saved successfully');
         } catch (error) {

@@ -19,6 +19,7 @@ export const AppProvider = ({ children }) => {
   const [lang, setLang] = useState(localStorage.getItem('language') || 'en');
   const [timerRef, setTimerRef] = useState(null);
   const [vword, setVword] = useState('');
+  const [trueVword, setTrueVword] = useState('');
   const [answers, setAnswers] = useState([]);
 
   // Fetch all puzzles once when provider mounts
@@ -64,6 +65,8 @@ export const AppProvider = ({ children }) => {
   // provider value memoized to avoid unnecessary re-renders
   const value = useMemo(() => ({
     // puzzles access
+    trueVword,
+    setTrueVword,
     vword,
     setVword,
     puzzlesMap,

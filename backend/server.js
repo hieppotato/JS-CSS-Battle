@@ -408,13 +408,13 @@ app.put("/approve-submission", async (req, res) => {
 
 app.post("/save-puzzle", async (req, res) => {
   try {
-    const { answers, vword } = req.body;
+    const { answers, vword, true_vword } = req.body;
     if (!answers || !vword) {
       return res.status(400).json({ error: "Missing parameters" });
     }
     const { data, error } = await supabase
       .from("puzzles")
-      .insert([{ answers, vword }])
+      .insert([{ answers, vword, true_vword }])
       .select()
       .maybeSingle();
     if (error) throw error;
@@ -627,7 +627,9 @@ app.post("/complete-vword", async (req, res) => {
       .select("*")
       .order("created_at", { ascending: false });
 
-    const newReward = (len.length < 4 ? 100 - Math.max(len.length - 1, 0) * 25 : 30);
+    const newReward = (len.data.length < 4 ? 100 - Math.max(len.data.length, 0) * 25 : 30);
+    console.log(len.data.length);
+    // console.log(newReward);
 
     const sel = await supabase
       .from('profiles')

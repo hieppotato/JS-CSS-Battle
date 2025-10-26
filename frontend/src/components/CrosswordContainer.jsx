@@ -23,7 +23,7 @@ export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, p
     if (!puzzle) return '';
     return typeof puzzle.vword === 'string' ? puzzle.vword : (Array.isArray(puzzle.vword) ? puzzle.vword.join('') : '');
   }, [puzzle]);
-  
+
   const answers = useMemo(() => {
     return Array.isArray(puzzle?.answers) ? puzzle.answers : [];
   }, [puzzle]);
@@ -200,24 +200,7 @@ const handleInputChange = async (e, i, j) => {
   useEffect(() => {
     if (Array.isArray(isCorrect) && isCorrect.length > 0 && isCorrect.every(v => v === true)) {
       stopTimerHandler(timerRef, setTimerRef);
-      const FinishPuzzle = async () => {
-        try{
-        const response = await axiosInstance.post('/complete-vword', {
-          userId: userInfo.id,
-          puzzleId,
-          reward: 0
-        });
-        if (response?.data?.points != null && typeof setScoreFromServer === 'function') {
-          setScoreFromServer(Number(response.data.points));
-          setDisableInput(response.data.puzzles?.includes(puzzleId));
-        }
-      } catch (error) {
-        console.error('Error completing vertical word:', error);
-        alert('Đã xảy ra lỗi khi gửi đáp án. Vui lòng thử lại.');
-      }
-    }
-    FinishPuzzle();
-    alert('Congrats! You finished the crossword.');
+      alert('Bạn đã hoàn thành tất cả hàng, hãy sắp xếp các kí tự hàng dọc thành từ có nghĩa');
     }
   }, [isCorrect, timerRef, setTimerRef]);
 
@@ -310,6 +293,11 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
     return typeof puzzle.vword === 'string' ? puzzle.vword : (Array.isArray(puzzle.vword) ? puzzle.vword.join('') : '');
   }, [puzzle]);
 
+  const TrueVword = useMemo(() => {
+    if (!puzzle) return '';
+    return typeof puzzle.true_vword === 'string' ? puzzle.true_vword : (Array.isArray(puzzle.true_vword) ? puzzle.true_vword.join('') : '');
+  }, [puzzle]);
+
   const answers = useMemo(() => {
     return Array.isArray(puzzle?.answers) ? puzzle.answers : [];
   }, [puzzle]);
@@ -370,7 +358,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
     return;
   }
   const normalizedGuess = verticalGuess.trim().toLowerCase();
-  const correctVWord = vword.toLowerCase();
+  const correctVWord = TrueVword.toLowerCase();
 
   if (normalizedGuess === correctVWord) {
     alert('Chính xác! Bạn đã đoán đúng chữ hàng dọc 🎉');
