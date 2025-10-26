@@ -5,7 +5,7 @@ import axiosInstance from '../utils/axiosInstance';
 import './style.css'; 
 
 // DrawCrossword component (ĐÃ LOẠI BỎ LOGIC RENDER BUTTON)
-export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, puzzleId, userInfo, setScoreFromServer, setCount }) => {
+export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, puzzleId, userInfo, setScoreFromServer, setCount, setDisableInput }) => {
   const { colors, timerRef, setTimerRef } = useContext(AppContext);
   const { getPuzzleById, loadingPuzzles, puzzlesError } = useContext(AppContext);
   
@@ -415,6 +415,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
                 userInfo={userInfo}
                 setScoreFromServer={setScoreFromServer}
                 setCount={setCount}
+                setDisableInput={setDisableInput}
               />
 
               {/* // // THÊM MỚI: Cột 2: Các button hint */}
