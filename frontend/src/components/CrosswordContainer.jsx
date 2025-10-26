@@ -205,7 +205,7 @@ const handleInputChange = async (e, i, j) => {
         const response = await axiosInstance.post('/complete-vword', {
           userId: userInfo.id,
           puzzleId,
-          reward: 100
+          reward: 0
         });
         if (response?.data?.points != null && typeof setScoreFromServer === 'function') {
           setScoreFromServer(Number(response.data.points));
@@ -217,7 +217,7 @@ const handleInputChange = async (e, i, j) => {
       }
     }
     FinishPuzzle();
-      alert('Congrats! You finished the crossword.');
+    alert('Congrats! You finished the crossword.');
     }
   }, [isCorrect, timerRef, setTimerRef]);
 

@@ -622,7 +622,13 @@ app.post("/complete-vword", async (req, res) => {
       return res.status(400).json({ error: 'Missing parameters' });
     }
 
-    // 1) lấy profile
+    const len = await supabase
+      .from("ranking")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    const newReward = (len.length < 4 ? 100 - Math.max(len.length - 1, 0) * 25 : 30);
+
     const sel = await supabase
       .from('profiles')
       .select('point, puzzles')
@@ -641,7 +647,7 @@ app.post("/complete-vword", async (req, res) => {
       return res.json({ already: true, points: currentPoints, message: 'Already completed' });
     }
 
-    const r = Number(reward) || 0;
+    const r = Number(newReward) || 0;
     const newPoint = currentPoints + r;
     const newPuzzles = [...puzzlesArr, pid];
 
@@ -653,6 +659,10 @@ app.post("/complete-vword", async (req, res) => {
       .maybeSingle();
 
     if (upd.error) throw upd.error;
+
+    const rank = await supabase
+    .from("ranking")
+    .insert({userId : userId})
 
     return res.json({
       already: false,
