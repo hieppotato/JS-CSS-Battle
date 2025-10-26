@@ -61,13 +61,13 @@ const Home = ({ puzzles, userInfo, setUserInfo }) => {
                 <div key={id} className="css-item">
                   <div className="css-input-group">
                     <label>Bài {id}</label>
-                    <input
+                    {/* <input
                       type="number"
                       placeholder="Nhập điểm"
                       value={cssPoints[id] || ""}
                       onChange={(e) => handlePointChange(id, e.target.value)}
                       disabled={isSubmitted || loading === id} // disable input nếu đã nộp hoặc đang nộp
-                    />
+                    /> */}
                   </div>
 
                   {!isSubmitted && (
