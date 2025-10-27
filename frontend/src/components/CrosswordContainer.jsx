@@ -384,7 +384,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
       })
       if(res?.data){
         console.log(res?.data);
-        setScoreFromServer(Number(res?.data));
+        setScoreFromServer(Number(res?.data?.data));
       }
     }catch(error){
       console.error('Error completing vertical word:', error);
