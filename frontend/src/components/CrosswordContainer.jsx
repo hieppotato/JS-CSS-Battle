@@ -378,12 +378,13 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
     }
   } else {
     try {
-      const response = await axiosInstance.put('/minus-point', {
+      const res = await axiosInstance.put('/minus-point', {
         userId: userInfo.id,
         point: 10
       })
-      if(response?.data){
-        setScoreFromServer(Number(response?.data));
+      if(res?.data){
+        console.log(res?.data);
+        setScoreFromServer(Number(res?.data));
       }
     }catch(error){
       console.error('Error completing vertical word:', error);
