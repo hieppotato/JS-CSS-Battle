@@ -1,36 +1,131 @@
-import React, { useEffect, useState } from "react";
+// src/pages/AdminRequests.jsx
+import React, { useEffect, useState, useRef } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 import dayjs from "dayjs";
-import "../Home/home.css"; // ✅ Dùng lại style của Home
+import "../Home/home.css";
+import { supabase } from "../../utils/supabaseClient"; // <-- import supabase client
 
 const AdminRequests = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState({});
+  const mountedRef = useRef(true);
 
-  // ✅ Lấy danh sách request (chỉ lấy pending)
+  // helper: convert array -> map keyed by id for dedupe/update
+  const toMap = (arr) => {
+    const map = new Map();
+    (arr || []).forEach((r) => map.set(String(r.id), r));
+    return map;
+  };
+
+  // initial load (only pending)
   const fetchRequests = async () => {
     try {
       setLoading(true);
       const res = await axiosInstance.get("/get-requests");
       const pendingOnly = (res.data || []).filter((r) => r.status === "pending");
+      if (!mountedRef.current) return;
       setRequests(pendingOnly);
     } catch (err) {
       console.error("Fetch requests error:", err);
       alert("Không thể tải danh sách request");
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   };
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchRequests();
+
+    // subscribe realtime to requests table
+    const channel = supabase
+      .channel("public:requests") // tên channel tuỳ ý
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "requests" },
+        (payload) => {
+          try {
+            const newRow = payload.new;
+            if (!newRow) return;
+            // only care pending requests
+            if (newRow.status === "pending") {
+              setRequests((prev) => {
+                // dedupe by id
+                if (prev.some((r) => String(r.id) === String(newRow.id))) return prev;
+                return [newRow, ...prev];
+              });
+            }
+          } catch (e) {
+            console.error("Realtime INSERT handler error:", e);
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "requests" },
+        (payload) => {
+          try {
+            const newRow = payload.new;
+            const oldRow = payload.old;
+            if (!newRow) return;
+
+            setRequests((prev) => {
+              // if new status is pending -> add or update
+              if (newRow.status === "pending") {
+                const exists = prev.some((r) => String(r.id) === String(newRow.id));
+                if (exists) {
+                  // update existing
+                  return prev.map((r) => (String(r.id) === String(newRow.id) ? newRow : r));
+                } else {
+                  // add to top
+                  return [newRow, ...prev];
+                }
+              } else {
+                // if it was pending before and now not pending -> remove
+                return prev.filter((r) => String(r.id) !== String(newRow.id));
+              }
+            });
+          } catch (e) {
+            console.error("Realtime UPDATE handler error:", e);
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "requests" },
+        (payload) => {
+          try {
+            const oldRow = payload.old;
+            if (!oldRow) return;
+            setRequests((prev) => prev.filter((r) => String(r.id) !== String(oldRow.id)));
+          } catch (e) {
+            console.error("Realtime DELETE handler error:", e);
+          }
+        }
+      )
+      .subscribe((status) => {
+        // optional: log subscribe status for debug
+        console.log("Supabase requests channel status:", status);
+      });
+
+    return () => {
+      mountedRef.current = false;
+      try {
+        supabase.removeChannel(channel);
+      } catch (e) {
+        // ignore
+      }
+    };
   }, []);
 
-  // ✅ Hàm duyệt request
+  // approve handler (optimistic UI: remove row immediately)
   const handleApprove = async (reqItem) => {
     if (approving[reqItem.id]) return;
     setApproving((prev) => ({ ...prev, [reqItem.id]: true }));
+
+    // optimistic remove so admin sees immediate feedback
+    setRequests((prev) => prev.filter((r) => String(r.id) !== String(reqItem.id)));
 
     try {
       if (reqItem.type === "buy_hint") {
@@ -51,11 +146,17 @@ const AdminRequests = () => {
         throw new Error(`Unknown request type: ${reqItem.type}`);
       }
 
-      // ✅ Ẩn ngay request đã duyệt khỏi bảng
-      setRequests((prev) => prev.filter((r) => r.id !== reqItem.id));
+      // Server should update request.status -> realtime will also reflect;
+      // we already removed it optimistically. If server returns updated row and you want to reinsert, handle here.
     } catch (err) {
       console.error("Approve error:", err);
       alert("Duyệt thất bại!");
+      // rollback: re-add the request if approval failed
+      setRequests((prev) => {
+        // avoid duplicate
+        if (prev.some((r) => String(r.id) === String(reqItem.id))) return prev;
+        return [reqItem, ...prev];
+      });
     } finally {
       setApproving((prev) => {
         const copy = { ...prev };
@@ -108,7 +209,7 @@ const AdminRequests = () => {
                       <td>{req.type}</td>
                       <td className="text-yellow-400 font-semibold">{req.status}</td>
                       <td>{req.hintCost ?? "-"}</td>
-                      <td className="text-xs">{req.userName}</td>
+                      <td className="text-xs">{req.userName ?? req.userId}</td>
                       <td>{req.cssPoint ?? "-"}</td>
                       <td className="text-center">
                         <button

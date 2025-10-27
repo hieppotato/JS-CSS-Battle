@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import { AppContext } from '../AppProvider';
 import { stopTimerHandler } from '../scripts/timer-crossword';
 import axiosInstance from '../utils/axiosInstance';
+import useProfileRealtime from '../hooks/useProfileRealtime';
 import './style.css'; 
 
 // DrawCrossword component (ĐÃ LOẠI BỎ LOGIC RENDER BUTTON)
@@ -279,6 +280,19 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   const [verticalGuess, setVerticalGuess] = useState('');
   const [disableInput, setDisableInput] = useState(false);
   
+    const [localUserInfo, setLocalUserInfo] = useState(userInfo);
+  
+    useEffect(() => { setLocalUserInfo(userInfo); }, [userInfo]);
+  
+    useProfileRealtime(userInfo?.id, (newRow) => {
+      if (!newRow) return;
+  
+      if (typeof setScoreFromServer === 'function' && newRow.point != null) {
+        setScoreFromServer(Number(newRow.point));
+      }
+      setLocalUserInfo(prev => ({ ...(prev || {}), ...newRow }));
+    });
+  
   useEffect(() => {
     setDisableInput(userInfo?.puzzles?.includes(puzzleId));
   }, [userInfo, puzzleId]);
@@ -326,7 +340,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
         userId: userInfo.id,
         rowId: puzzleId * 10 + rowIndex,
         // // Logic tính toán chi phí hint (rowIndex đã là i + 1)
-        hintCost: userInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) ? 5 : 3,
+        hintCost: localUserInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) ? 5 : 3,
         userName: userInfo.name
       }
       );
@@ -413,7 +427,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
                 handleKeyDown={handleKeyDown}
                 inputRefs={inputRefs}
                 puzzleId={puzzleId}
-                userInfo={userInfo}
+                userInfo={localUserInfo}
                 setScoreFromServer={setScoreFromServer}
                 setCount={setCount}
                 setDisableInput={setDisableInput}
@@ -424,12 +438,12 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
                 {/* Lặp qua 'answers' để tạo số lượng button tương ứng */}
                 {answers.map((_, i) => (
                   <div key={`hint-btn-wrapper-${i}`} className="hint-button-wrapper">
-                    {userInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) ? (
+                    {localUserInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) ? (
                       <button
                         type="button"
                         className="btn hint-button" // // Dùng class mới
                         onClick={() => handleBuyHint(i + 1)} // // i + 1 là rowIndex (1-based)
-                        hidden={(countOccurrences(userInfo.hints, puzzleId * 10 + i + 1) > 1)}
+                        hidden={(countOccurrences(localUserInfo?.hints, puzzleId * 10 + i + 1) > 1)}
                       >
                         Mua hint 2 (-5 điểm) 
                       </button>
