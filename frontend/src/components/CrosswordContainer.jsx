@@ -317,7 +317,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   // // THÊM MỚI: handleBuyHint đã được chuyển lên đây
   const handleBuyHint = async (rowIndex) => {
     console.log(`Buy hint for row ${rowIndex}`);
-    if(userInfo.point < 4) 
+    if(userInfo.point < 3) 
     {     alert('Không đủ điểm để mua hint');
       return;
     }
@@ -326,7 +326,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
         userId: userInfo.id,
         rowId: puzzleId * 10 + rowIndex,
         // // Logic tính toán chi phí hint (rowIndex đã là i + 1)
-        hintCost: userInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) ? 6 : 4,
+        hintCost: userInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) ? 5 : 3,
         userName: userInfo.name
       }
       );
@@ -377,7 +377,19 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
       alert('Đã xảy ra lỗi khi gửi đáp án. Vui lòng thử lại.');
     }
   } else {
-    alert('Sai rồi, hãy thử lại 😅');
+    try {
+      const response = await axiosInstance.put('/minus-point', {
+        userId: userInfo.id,
+        point: 10
+      })
+      if(response.data){
+        setScoreFromServer(response.data.point);
+      }
+    }catch(error){
+      console.error('Error completing vertical word:', error);
+      alert('Đã xảy ra lỗi khi gửi đáp án. Vui lòng thử lại.');
+    }
+    alert('Sai rồi, bạn bị trừ 10 điểm 😅');
   }
 };
 
@@ -418,7 +430,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
                         onClick={() => handleBuyHint(i + 1)} // // i + 1 là rowIndex (1-based)
                         hidden={(countOccurrences(userInfo.hints, puzzleId * 10 + i + 1) > 1)}
                       >
-                        Mua hint 2 (-6 điểm) 
+                        Mua hint 2 (-5 điểm) 
                       </button>
                     ) : (
                       // Chưa mua hint 1 -> Hiển thị nút mua hint 1
@@ -427,7 +439,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
                         className="btn hint-button" // // Dùng class mới
                         onClick={() => handleBuyHint(i + 1)}
                       >
-                        Mua hint 1 (-4 điểm)
+                        Mua hint 1 (-3 điểm)
                       </button>
                     )}
                   </div>

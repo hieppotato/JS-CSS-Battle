@@ -752,6 +752,33 @@ app.put("/approve-css-submission", async (req, res) => {
   }
 });
 
+app.put("/minus-point", async (req, res) => {
+  try{
+    const {userId, point} = req.body;
+
+    const response = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle()
+    
+    const newPoint = Number(response.data.point) - point;
+    // console.log(newPoint);
+
+    const {data, error} = await supabase
+    .from("profiles")
+    .update({point: newPoint})
+    .eq("id", userId)
+    .select()
+    .maybeSingle()
+    if(error) throw error;
+
+    res.status(201).json({ data: data });
+
+  }catch(error){
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 app.get('/ping', (req,res)=>res.json({ok:true}));
 
