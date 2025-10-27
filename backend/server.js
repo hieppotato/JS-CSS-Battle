@@ -773,7 +773,7 @@ app.put("/minus-point", async (req, res) => {
     .maybeSingle()
     if(error) throw error;
 
-    res.status(201).json({ data: data });
+    res.status(201).json({ data: data.point });
 
   }catch(error){
     res.status(500).json({ error: "Server error" });
