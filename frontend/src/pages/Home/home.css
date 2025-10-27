@@ -107,6 +107,7 @@
 }
 
 /* === Khu vực Puzzle === */
+
 .puzzle-section {
   width: 65%;
   padding: 2rem 3rem;
@@ -117,8 +118,13 @@
   list-style: none;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.2rem;
+  /*    * THAY ĐỔI 1: Tăng minmax từ 250px lên 300px.
+   * -> Giúp các button rộng hơn, hiển thị ít cột hơn trên màn hình lớn.
+   */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  /*    * THAY ĐỔI 2: Tăng khoảng cách (gap) giữa các button.
+   */
+  gap: 1.5rem; /* Tăng từ 1.2rem */
 }
 
 .puzzle-btn {
@@ -126,18 +132,27 @@
   background: rgba(17, 24, 39, 0.6);
   border: 1px solid rgba(37, 99, 235, 0.4);
   color: #93c5fd;
-  font-weight: 600;
-  padding: 1rem;
-  border-radius: 1rem;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease; /* 'ease' mượt hơn */
+  border-radius: 1rem;
+  
+  /*    * THAY ĐỔI 3: Tăng padding để button "to" và "cao" hơn.
+   */
+  padding: 1.75rem 1.5rem; /* Tăng từ 1rem */
+  /*    * THAY ĐỔI 4: Tăng font-size và font-weight cho rõ ràng hơn.
+   */
+  font-size: 1.15rem; /* Thêm mới */
+  font-weight: 700;   /* Tăng từ 600 */
 }
 
 .puzzle-btn:hover {
   background: rgba(29, 78, 216, 0.3);
   color: white;
-  box-shadow: 0 0 12px rgba(37, 99, 235, 0.5);
+  /*    * THAY ĐỔI 5: Thêm hiệu ứng transform và shadow rõ hơn.
+   */
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.55); /* Rõ hơn */
+  transform: translateY(-3px); /* Hiệu ứng nhấc lên */
 }
 
 .puzzle-btn:focus {
