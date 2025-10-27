@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import React, { useEffect, useState } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 import { useNavigate } from "react-router-dom";
@@ -11,65 +10,47 @@ const Home = ({ puzzles, userInfo, setUserInfo }) => {
   const navigate = useNavigate();
   const userId = userInfo?.id;
 
-  // localUser: giữ state cục bộ để realtime cập nhật
+  const [clickNumber, setClickNumber] = useState({}); // đếm click từng bài
+  const [loading, setLoading] = useState(null);
+  const [cssPoints, setCssPoints] = useState({});
+
+  // localUser để realtime cập nhật userInfo.rows
   const [localUser, setLocalUser] = useState(userInfo ?? null);
 
-  // sync khi parent truyền userInfo mới (ví dụ khi login)
   useEffect(() => {
     setLocalUser(userInfo ?? null);
   }, [userInfo]);
 
-  // Hook realtime: khi có payload mới => merge vào localUser và (nếu có) setUserInfo của parent
   const handleRealtimeUpdate = (newRow) => {
     if (!newRow) return;
     setLocalUser((prev) => {
       const merged = { ...(prev || {}), ...newRow };
-      // đồng bộ lại lên parent nếu setUserInfo được truyền
       if (typeof setUserInfo === "function") {
-        try {
-          setUserInfo((p) => ({ ...(p || {}), ...newRow }));
-        } catch (e) {
-          // nếu parent không muốn/có lỗi, ignore
-          console.warn("setUserInfo failed:", e);
-        }
+        setUserInfo((p) => ({ ...(p || {}), ...newRow }));
       }
       return merged;
     });
   };
 
-  // sử dụng hook realtime (implement của bạn nên nhận (userId, callback))
   useProfileRealtime(userId, handleRealtimeUpdate);
 
-  const [cssPoints, setCssPoints] = useState({});
-  const [loading, setLoading] = useState(null);
-
-  const handlePointChange = (questionId, value) => {
-    setCssPoints((prevPoints) => ({
-      ...prevPoints,
-      [questionId]: value,
-    }));
-  };
-
   const handleSubmitCss = async (questionId) => {
-    const effectiveUserId = localUser?.id ?? userInfo?.id;
-    const effectiveUserName = localUser?.name ?? userInfo?.name;
+    if (!userId) return alert("Vui lòng đăng nhập.");
 
-    if (!effectiveUserId) return alert("Vui lòng đăng nhập.");
+    // nếu đã click trước đó → không cho click lại
+    if (clickNumber[questionId]) return;
 
-    const cssPoint = 0;
-    if (cssPoint === undefined || cssPoint === "" || cssPoint === null)
-      return alert("Nhập điểm trước khi nộp.");
+    // đánh dấu đã click
+    setClickNumber((prev) => ({ ...prev, [questionId]: true }));
+    setLoading(questionId);
 
-    setLoading(questionId); // hiện "Đang nộp..."
     try {
       await axiosInstance.post("/request-submit-css", {
-        userId: effectiveUserId,
+        userId,
         questionId,
-        cssPoint: Number(cssPoint),
-        userName: effectiveUserName,
+        cssPoint: 0, // mặc định 0
+        userName: userInfo.name,
       });
-
-      handlePointChange(questionId, "");
     } catch (err) {
       console.error("Submit CSS error:", err);
       alert(
@@ -77,6 +58,9 @@ const Home = ({ puzzles, userInfo, setUserInfo }) => {
           err?.response?.data?.error || err?.message || "Unknown error"
         }`
       );
+
+      // nếu lỗi thì cho click lại
+      setClickNumber((prev) => ({ ...prev, [questionId]: false }));
     } finally {
       setLoading(null);
     }
@@ -95,27 +79,21 @@ const Home = ({ puzzles, userInfo, setUserInfo }) => {
                 Array.isArray(rows) &&
                 (rows.includes(id.toString()) || rows.includes(id));
 
+              const isClicking = clickNumber[id]; // đang xử lý
+
               return (
                 <div key={id} className="css-item">
                   <div className="css-input-group">
                     <label>Bài {id}</label>
-                    {/* nếu sau muốn hiện input điểm, mở comment bên dưới */}
-                    {/* <input
-                      type="number"
-                      placeholder="Nhập điểm"
-                      value={cssPoints[id] ?? ""}
-                      onChange={(e) => handlePointChange(id, e.target.value)}
-                      disabled={isSubmitted || loading === id}
-                    /> */}
                   </div>
 
                   {!isSubmitted && (
                     <button
                       onClick={() => handleSubmitCss(id)}
-                      disabled={loading === id}
+                      disabled={loading === id || isClicking}
                       className="submit-btn"
                     >
-                      {loading === id ? "Đang nộp..." : "Nộp"}
+                      {loading === id || isClicking ? "Đang nộp..." : "Nộp"}
                     </button>
                   )}
 
