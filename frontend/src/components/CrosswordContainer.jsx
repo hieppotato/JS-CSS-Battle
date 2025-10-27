@@ -108,20 +108,71 @@ export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, p
   }
 }, [disabledRows, setCount]);
 
+const internalHandleKeyDown = (e, i, j, currInitPosition) => {
+  const gridCol = currInitPosition + j;
 
-const handleInputChange = async (e, i, j) => {
+  // 1. Logic di chuyển lùi khi bấm Backspace
+  if (e.key === "Backspace") {
+    const currentInput = inputRefs.current?.[i]?.[gridCol];
+
+    // Chỉ di chuyển lùi nếu ô hiện tại đã rỗng
+    if (currentInput && currentInput.value === "" && inputRefs.current && inputRefs.current[i]) {
+      let prevWordIndex = j - 1;
+
+      // Tìm ô liền trước mà không bị vô hiệu hóa
+      while (prevWordIndex >= 0) {
+        const prevGridCol = currInitPosition + prevWordIndex;
+        const prevInput = inputRefs.current[i][prevGridCol];
+
+        if (prevInput && !prevInput.disabled) {
+          prevInput.focus();
+          prevInput.select(); // Bôi đen text (nếu có)
+          break; // Dừng lại khi đã tìm thấy và focus
+        }
+        prevWordIndex--; // Thử ô trước đó nữa
+      }
+    }
+  }
+
+  // 2. Gọi hàm handleKeyDown gốc từ props (để xử lý phím mũi tên)
+  if (handleKeyDown) {
+    handleKeyDown(e, i, gridCol); // Prop này vẫn dùng gridCol
+  }
+};
+
+const handleInputChange = async (e, i, j, currInitPosition) => {
   if (disabledRows[i]) return;
 
   const reward = 10;
-  const newValue = (e.target.value || '').toUpperCase().slice(-1);
+  const newValue = (e.target.value || "").toUpperCase().slice(-1);
 
-  setInputAns(prev => {
-    const copy = prev.map(r => r.slice());
-    if (!copy[i]) copy[i] = Array((answers[i] || '').length).fill('');
+  setInputAns((prev) => {
+    const copy = prev.map((r) => r.slice());
+    if (!copy[i]) copy[i] = Array((answers[i] || "").length).fill("");
     copy[i][j] = newValue;
     return copy;
   });
 
+  // ================================================================
+  // === BẮT ĐẦU: LOGIC TỰ ĐỘNG CHUYỂN Ô TIẾP THEO ===
+  // ================================================================
+  if (newValue && inputRefs.current && inputRefs.current[i]) {
+    const rowWordLength = (answers[i] || "").length;
+    let nextWordIndex = j + 1;
+
+    // Vòng lặp để tìm ô tiếp theo không bị vô hiệu hóa
+    while (nextWordIndex < rowWordLength) {
+      const nextGridCol = currInitPosition + nextWordIndex;
+      const nextInput = inputRefs.current[i][nextGridCol];
+
+      if (nextInput && !nextInput.disabled) {
+        nextInput.focus();
+        nextInput.select(); // Bôi đen text (nếu có)
+        break; // Dừng lại khi đã tìm thấy và focus
+      }
+      nextWordIndex++; // Thử ô tiếp theo nữa
+    }
+  }
   const candidate = (inputAns[i] ? inputAns[i].slice() : Array((answers[i] || '').length).fill(''));
   candidate[j] = newValue;
   const word = candidate.join('');
@@ -242,7 +293,7 @@ const handleInputChange = async (e, i, j) => {
                       ? correctValue
                       : (disabledRows[i] ? correctValue : (defaultValue || ''))
                   }
-                  onChange={(e) => handleInputChange(e, i, j)}
+                  onChange={(e) => handleInputChange(e, i, j, currInitPosition)}
                   maxLength={1}
                   disabled={!!disabledRows[i] || !userInfo.rows.includes(String(i + 1))}
                   // disabled={!userInfo.rows.includes(String(i + 1))}
@@ -252,7 +303,7 @@ const handleInputChange = async (e, i, j) => {
                       inputRefs.current[i][currInitPosition + j] = el;
                     }
                   }}
-                  onKeyDown={(e) => { if (handleKeyDown) handleKeyDown(e, i, currInitPosition + j); }}
+                  onKeyDown={(e) => internalHandleKeyDown(e, i, j, currInitPosition)}
                 />
               );
             })}
