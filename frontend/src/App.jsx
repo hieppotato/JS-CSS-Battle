@@ -76,6 +76,8 @@ const fetchProfile = useCallback(async () => {
           headers: { Authorization: `Bearer ${newToken}` },
         });
         SetUserInfo(res.data.user);
+        console.log(userInfo);
+        console.log(userInfo.role);
       } catch (retryErr) {
         console.error("Retry fetchProfile failed:", retryErr);
         SetUserInfo(null);
