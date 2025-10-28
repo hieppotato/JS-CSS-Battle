@@ -106,14 +106,14 @@ const fetchProfile = useCallback(async () => {
           <Route path="/" element={<PrivateRoute><Home userInfo={userInfo} puzzles={puzzles}/></PrivateRoute>}/>
           <Route path="/home" element={<PrivateRoute><Home userInfo={userInfo} puzzles={puzzles}/></PrivateRoute>}/>
           <Route path="/login" element={<Login fetchProfile = {fetchProfile}/>}/>
-          <Route path="/create-contest" element={<PrivateRoute><CreateContest userInfo={userInfo}/></PrivateRoute>}/>
+          { userInfo.role === "admin" && <Route path="/create-contest" element={<PrivateRoute><CreateContest userInfo={userInfo}/></PrivateRoute>}/>}
           <Route path="/contest/:contestId" element={<PrivateRoute><Contest userInfo={userInfo}/></PrivateRoute>}/>
           <Route path="/puzzle-game/:id" element={<PrivateRoute><PuzzleGame userInfo={userInfo}/></PrivateRoute>}/>
           <Route path="/create-puzzle" element={<CreatePuzzle/>} />
           <Route path="/home" element={<Home/>}/>
           <Route path="/login" element={<Login/>}/>
           {/* <Route path="/dashboard" element={<UserDashboard/>}/> */}
-          <Route path="/admin/requests" element={<PrivateRoute><AdminRequests/></PrivateRoute>}/>
+          { userInfo.role === "admin" &&<Route path="/admin/requests" element={<PrivateRoute><AdminRequests/></PrivateRoute>}/>}
         </Routes>
       </Router>
     </div>
