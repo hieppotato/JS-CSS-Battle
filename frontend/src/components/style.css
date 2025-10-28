@@ -1,5 +1,14 @@
 /* crossword.css - TONE XANH NƯỚC (AQUA), RESPONSIVE */
 
+:root {
+  --cell-size: 55px;   /* kích thước 1 ô (width & height). Giảm xuống 40px để hiển thị nhiều ô hơn */
+  --cell-gap: 8px;     /* khoảng cách giữa ô */
+  --cols: 16;          /* số cột tối đa trong lưới - match với inputRefs chiều dài 36 */
+  --puzzle-max-width: calc(var(--cell-size) * var(--cols) + var(--cell-gap) * var(--cols) + 80px);
+  --hint-col-width: 140px;   /* nếu muốn thay đổi bề rộng column hint thì chỉnh ở đây */
+  --hint-gap: 24px;          /* khoảng cách giữa puzzle-form và hint column */
+}
+
 /* reset nhỏ */
 .page-root {
   min-height: 100vh;
@@ -52,36 +61,33 @@
 
 /* puzzle-form container */
 .puzzle-form {
-  display: grid;
-  /* MODIFIED: Khoảng cách ô (gap) để "căn đều" */
-  row-gap: 18px; 
-  column-gap: 8px;
-  justify-content: center;
-  align-items: center;
-  padding: 40px;
+  display: grid !important;
+  grid-auto-rows: var(--cell-size); /* chiều cao hàng = kích thước ô */
+  grid-template-columns: repeat(var(--cols), var(--cell-size));
+  gap: var(--cell-gap);
+  justify-content: start;      /* để grid bắt đầu từ trái */
+  align-items: start;
+  padding: 24px;
+  box-sizing: border-box;
   background: rgba(0,0,0,0.18);
   border-radius: 10px;
-  /* MODIFIED: Viền xanh aqua */
   border: 1px solid rgba(72, 202, 228, 0.1);
-  overflow: auto;
+  overflow: auto;              /* bật scroll khi lưới quá rộng/ cao */
+  max-width: 100%;
+  /* optional: giới hạn chiều ngang để show scroll bar nếu quá lớn */
+  max-height: calc(100vh - 260px); /* giữ trong viewport, bạn có thể điều chỉnh */
 }
-
 /* default cell style */
 .puzzle-cell {
-  /* MODIFIED: Tăng kích thước ô chữ */
-  width: 55px;
-  height: 55px;
+    width: var(--cell-size);
+  height: var(--cell-size);
   box-sizing: border-box;
-  /* MODIFIED: Nền ô màu xanh blue đậm */
   background: linear-gradient(180deg, rgba(10, 40, 60, 0.9), rgba(0, 20, 30, 0.9));
-  /* MODIFIED: Viền ô màu xanh aqua */
   border: 1px solid rgba(72, 202, 228, 0.2);
-  /* MODIFIED: Màu chữ xanh nhạt */
   color: #e0f2fe;
   text-align: center;
   vertical-align: middle;
-  /* MODIFIED: Tăng cỡ chữ trong ô */
-  font-size: 24px;
+  font-size: calc(var(--cell-size) * 0.44); 
   font-weight: 600;
   border-radius: 4px;
   outline: none;
@@ -116,10 +122,6 @@ button.btn {
   font-size: 14px;
 }
 
-:root {
-  --hint-col-width: 140px;   /* nếu muốn thay đổi bề rộng column hint thì chỉnh ở đây */
-  --hint-gap: 24px;          /* khoảng cách giữa puzzle-form và hint column */
-}
 
 /* primary action */
 .btn-primary {
@@ -133,10 +135,10 @@ button.btn {
 
 /* đảm bảo parent cho phép absolute positioning cho hint */
 .puzzle-with-hints {
-  position: relative;        /* để hint-button-column absolute an toàn */
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0 20px;           /* padding tổng cho vùng (không ảnh hưởng vị trí hint) */
+  display: flex;
+  gap: var(--hint-gap, 24px);
+  align-items: flex-start;
+  justify-content: center;
 }
 
 /* puzzle-form sẽ được căn giữa trong .puzzle-with-hints */
@@ -165,7 +167,7 @@ button.btn {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  z-index: 10;
+  z-index: 20;
   box-sizing: border-box;
   pointer-events: auto;
 }
@@ -300,6 +302,10 @@ button.btn {
   .puzzle-cell { width: 40px; height: 40px; font-size: 18px; }
   .vertical-input { min-width: 120px; }
   .cp-title { font-size: 18px; }
+}
+
+@media (max-width: 1200px) {
+  :root { --cell-size: 48px; }
 }
 
 /* PHẦN CSS BỊ TRÙNG LẶP BÊN DƯỚI ĐÃ ĐƯỢC XÓA */
