@@ -201,7 +201,7 @@ const Home = ({ puzzles, userInfo, setUserInfo }) => {
             {puzzles.map((puzzle) => (
               <li key={puzzle.id}>
                 <button
-                  onClick={() => navigate(`/puzzle-game/${puzzle.id}`)}
+                  onClick={() => window.location.href = `/puzzle-game/${puzzle.id}`}
                   className="puzzle-btn"
                 >
                   🧩 Puzzle {puzzle.name || puzzle.id}
