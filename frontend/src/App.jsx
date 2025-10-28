@@ -76,7 +76,6 @@ const fetchProfile = useCallback(async () => {
           headers: { Authorization: `Bearer ${newToken}` },
         });
         SetUserInfo(res.data.user);
-        console.log(userInfo);
       } catch (retryErr) {
         console.error("Retry fetchProfile failed:", retryErr);
         SetUserInfo(null);
@@ -87,9 +86,10 @@ const fetchProfile = useCallback(async () => {
   }
 }, []);
 
-  useEffect(() => {
-    fetchProfile();
-    fetchPuzzles();
+useEffect(() => {
+  fetchProfile();
+  fetchPuzzles();
+  console.log(userInfo);
     const handleStorageChange = () => {
       fetchProfile();
     };
