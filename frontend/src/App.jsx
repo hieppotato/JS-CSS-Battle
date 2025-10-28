@@ -77,7 +77,6 @@ const fetchProfile = useCallback(async () => {
         });
         SetUserInfo(res.data.user);
         console.log(userInfo);
-        console.log(userInfo.role);
       } catch (retryErr) {
         console.error("Retry fetchProfile failed:", retryErr);
         SetUserInfo(null);
@@ -108,14 +107,14 @@ const fetchProfile = useCallback(async () => {
           <Route path="/" element={<PrivateRoute><Home userInfo={userInfo} puzzles={puzzles}/></PrivateRoute>}/>
           <Route path="/home" element={<PrivateRoute><Home userInfo={userInfo} puzzles={puzzles}/></PrivateRoute>}/>
           <Route path="/login" element={<Login fetchProfile = {fetchProfile}/>}/>
-          { userInfo.role === "admin" && <Route path="/create-contest" element={<PrivateRoute><CreateContest userInfo={userInfo}/></PrivateRoute>}/>}
+          <Route path="/create-contest" element={<PrivateRoute><CreateContest userInfo={userInfo}/></PrivateRoute>}/>
           <Route path="/contest/:contestId" element={<PrivateRoute><Contest userInfo={userInfo}/></PrivateRoute>}/>
           <Route path="/puzzle-game/:id" element={<PrivateRoute><PuzzleGame userInfo={userInfo}/></PrivateRoute>}/>
           <Route path="/create-puzzle" element={<CreatePuzzle/>} />
           <Route path="/home" element={<Home/>}/>
           <Route path="/login" element={<Login/>}/>
           {/* <Route path="/dashboard" element={<UserDashboard/>}/> */}
-          { userInfo.role === "admin" &&<Route path="/admin/requests" element={<PrivateRoute><AdminRequests/></PrivateRoute>}/>}
+          <Route path="/admin/requests" element={<PrivateRoute><AdminRequests/></PrivateRoute>}/>
         </Routes>
       </Router>
     </div>
