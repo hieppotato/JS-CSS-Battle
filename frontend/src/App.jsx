@@ -86,10 +86,9 @@ const fetchProfile = useCallback(async () => {
   }
 }, []);
 
-useEffect(() => {
-  fetchProfile();
-  fetchPuzzles();
-  console.log(userInfo);
+  useEffect(() => {
+    fetchProfile();
+    fetchPuzzles();
     const handleStorageChange = () => {
       fetchProfile();
     };
@@ -114,7 +113,7 @@ useEffect(() => {
           <Route path="/home" element={<Home/>}/>
           <Route path="/login" element={<Login/>}/>
           {/* <Route path="/dashboard" element={<UserDashboard/>}/> */}
-          <Route path="/admin/requests" element={<PrivateRoute><AdminRequests/></PrivateRoute>}/>
+          <Route path="/admin/requests" element={<PrivateRoute><AdminRequests userInfo={userInfo}/></PrivateRoute>}/>
         </Routes>
       </Router>
     </div>

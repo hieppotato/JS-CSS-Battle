@@ -4,12 +4,14 @@ import axiosInstance from "../../utils/axiosInstance";
 import dayjs from "dayjs";
 import "../Home/home.css";
 import { supabase } from "../../utils/supabaseClient"; // <-- import supabase client
+import { useNavigate } from "react-router-dom";
 
-const AdminRequests = () => {
+const AdminRequests = ({userInfo}) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState({});
   const mountedRef = useRef(true);
+  const navigate = useNavigate();
 
   // helper: convert array -> map keyed by id for dedupe/update
   const toMap = (arr) => {
@@ -33,82 +35,83 @@ const AdminRequests = () => {
       if (mountedRef.current) setLoading(false);
     }
   };
-
+  
   useEffect(() => {
     mountedRef.current = true;
     fetchRequests();
-
+    
+    
     // subscribe realtime to requests table
     const channel = supabase
-      .channel("public:requests") // tên channel tuỳ ý
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "requests" },
-        (payload) => {
-          try {
-            const newRow = payload.new;
-            if (!newRow) return;
-            // only care pending requests
-            if (newRow.status === "pending") {
-              setRequests((prev) => {
-                // dedupe by id
-                if (prev.some((r) => String(r.id) === String(newRow.id))) return prev;
-                return [newRow, ...prev];
-              });
-            }
-          } catch (e) {
-            console.error("Realtime INSERT handler error:", e);
-          }
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "requests" },
-        (payload) => {
-          try {
-            const newRow = payload.new;
-            const oldRow = payload.old;
-            if (!newRow) return;
-
+    .channel("public:requests") // tên channel tuỳ ý
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "requests" },
+      (payload) => {
+        try {
+          const newRow = payload.new;
+          if (!newRow) return;
+          // only care pending requests
+          if (newRow.status === "pending") {
             setRequests((prev) => {
-              // if new status is pending -> add or update
-              if (newRow.status === "pending") {
-                const exists = prev.some((r) => String(r.id) === String(newRow.id));
-                if (exists) {
-                  // update existing
-                  return prev.map((r) => (String(r.id) === String(newRow.id) ? newRow : r));
-                } else {
-                  // add to top
-                  return [newRow, ...prev];
-                }
-              } else {
-                // if it was pending before and now not pending -> remove
-                return prev.filter((r) => String(r.id) !== String(newRow.id));
-              }
+              // dedupe by id
+              if (prev.some((r) => String(r.id) === String(newRow.id))) return prev;
+              return [newRow, ...prev];
             });
-          } catch (e) {
-            console.error("Realtime UPDATE handler error:", e);
           }
+        } catch (e) {
+          console.error("Realtime INSERT handler error:", e);
         }
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "requests" },
-        (payload) => {
-          try {
-            const oldRow = payload.old;
-            if (!oldRow) return;
-            setRequests((prev) => prev.filter((r) => String(r.id) !== String(oldRow.id)));
-          } catch (e) {
-            console.error("Realtime DELETE handler error:", e);
-          }
+      }
+    )
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "requests" },
+      (payload) => {
+        try {
+          const newRow = payload.new;
+          const oldRow = payload.old;
+          if (!newRow) return;
+          
+          setRequests((prev) => {
+            // if new status is pending -> add or update
+            if (newRow.status === "pending") {
+              const exists = prev.some((r) => String(r.id) === String(newRow.id));
+              if (exists) {
+                // update existing
+                return prev.map((r) => (String(r.id) === String(newRow.id) ? newRow : r));
+              } else {
+                // add to top
+                return [newRow, ...prev];
+              }
+            } else {
+              // if it was pending before and now not pending -> remove
+              return prev.filter((r) => String(r.id) !== String(newRow.id));
+            }
+          });
+        } catch (e) {
+          console.error("Realtime UPDATE handler error:", e);
         }
-      )
-      .subscribe((status) => {
-        // optional: log subscribe status for debug
-        console.log("Supabase requests channel status:", status);
-      });
-
+      }
+    )
+    .on(
+      "postgres_changes",
+      { event: "DELETE", schema: "public", table: "requests" },
+      (payload) => {
+        try {
+          const oldRow = payload.old;
+          if (!oldRow) return;
+          setRequests((prev) => prev.filter((r) => String(r.id) !== String(oldRow.id)));
+        } catch (e) {
+          console.error("Realtime DELETE handler error:", e);
+        }
+      }
+    )
+    .subscribe((status) => {
+      // optional: log subscribe status for debug
+      console.log("Supabase requests channel status:", status);
+    });
+    
     return () => {
       mountedRef.current = false;
       try {
@@ -117,16 +120,18 @@ const AdminRequests = () => {
         // ignore
       }
     };
+    
+    
   }, []);
-
+  
   // approve handler (optimistic UI: remove row immediately)
   const handleApprove = async (reqItem) => {
     if (approving[reqItem.id]) return;
     setApproving((prev) => ({ ...prev, [reqItem.id]: true }));
-
+    
     // optimistic remove so admin sees immediate feedback
     setRequests((prev) => prev.filter((r) => String(r.id) !== String(reqItem.id)));
-
+    
     try {
       if (reqItem.type === "buy_hint") {
         await axiosInstance.put("/approve-buy-hint", {
@@ -145,7 +150,7 @@ const AdminRequests = () => {
       } else {
         throw new Error(`Unknown request type: ${reqItem.type}`);
       }
-
+      
       // Server should update request.status -> realtime will also reflect;
       // we already removed it optimistically. If server returns updated row and you want to reinsert, handle here.
     } catch (err) {
@@ -165,7 +170,10 @@ const AdminRequests = () => {
       });
     }
   };
-
+  
+  // console.log(userInfo);
+  if(userInfo) if(userInfo?.role !== "admin") navigate("/home");
+  
   return (
     <div className="home-container">
       <div className="css-section" style={{ width: "100%" }}>
