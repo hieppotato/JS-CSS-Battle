@@ -2,7 +2,7 @@
 
 :root {
   --cell-size: 55px;   /* kích thước 1 ô (width & height). Giảm xuống 40px để hiển thị nhiều ô hơn */
-  --cell-gap: 8px;     /* khoảng cách giữa ô */
+  --cell-gap: 16px;     /* khoảng cách giữa ô */
   --cols: 16;          /* số cột tối đa trong lưới - match với inputRefs chiều dài 36 */
   --puzzle-max-width: calc(var(--cell-size) * var(--cols) + var(--cell-gap) * var(--cols) + 80px);
   --hint-col-width: 140px;   /* nếu muốn thay đổi bề rộng column hint thì chỉnh ở đây */
@@ -135,32 +135,17 @@ button.btn {
 
 /* đảm bảo parent cho phép absolute positioning cho hint */
 .puzzle-with-hints {
-  display: flex;
-  gap: var(--hint-gap, 24px);
-  align-items: flex-start;
-  justify-content: center;
-}
-
-/* puzzle-form sẽ được căn giữa trong .puzzle-with-hints */
-.puzzle-form {
-  max-width: calc(100% - (var(--hint-col-width) + var(--hint-gap)));
+  position: relative;
   width: 100%;
-  margin: 0 auto;
-  display: grid;
-  row-gap: 18px;
-  column-gap: 8px;
-  padding: 40px;
   box-sizing: border-box;
-  background: rgba(0,0,0,0.18);
-  border-radius: 10px;
-  border: 1px solid rgba(72, 202, 228, 0.1);
-  overflow: auto;
+  padding: 0 20px;
+  overflow: visible; /* allow hint column to sit outside without being clipped */
 }
 
 /* đặt cột hint nằm ở phải, không tác động tới margin auto của puzzle-form */
 .hint-button-column {
   position: absolute;
-  right: -50px;                 /* cách mép phải card */
+  left: calc(100% + var(--hint-gap, 24px)); /* sit to the right, not using negative right */
   top: 50%;
   transform: translateY(-50%);
   width: var(--hint-col-width);
@@ -182,16 +167,17 @@ button.btn {
 
 /* Khi màn nhỏ: đưa hint column xuống dưới puzzle-form */
 @media (max-width: 900px) {
-  .hint-button-column {
-    position: static;        /* trở về luồng bình thường */
+   .hint-button-column {
+    position: static;
+    left: auto;
+    top: auto;
+    transform: none;
     width: 100%;
     display: flex;
     flex-direction: row;
-    gap: 10px;
     justify-content: center;
+    gap: 10px;
     margin-top: 12px;
-    top: auto;
-    right: auto;
   }
   /* puzzle-form sẽ chiếm toàn chiều ngang nhỏ */
   .puzzle-form {
@@ -322,12 +308,6 @@ button.btn {
     color: #fff;
     text-align: center;
     margin-bottom: 25px;
-}
-
-.puzzle-form {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
 }
 
 .puzzle-row {
