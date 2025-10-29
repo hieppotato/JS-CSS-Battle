@@ -6,7 +6,7 @@ import "./home.css";
 import useProfileRealtime from "../../hooks/useProfileRealtime";
 
 const cssQuestions = [1, 2, 3, 4, 5, 6, 7];
-const TIMEOUT_MS = 15000; // nếu realtime im lặng, rollback sau 15s
+const TIMEOUT_MS = 1800000; // nếu realtime im lặng, rollback sau 15s
 
 const Home = ({ puzzles, userInfo, setUserInfo, setPuzzles }) => {
   const navigate = useNavigate();
