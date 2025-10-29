@@ -8,9 +8,10 @@ import useProfileRealtime from "../../hooks/useProfileRealtime";
 const cssQuestions = [1, 2, 3, 4, 5, 6, 7];
 const TIMEOUT_MS = 15000; // nếu realtime im lặng, rollback sau 15s
 
-const Home = ({ puzzles, userInfo, setUserInfo }) => {
+const Home = ({ puzzles, userInfo, setUserInfo, setPuzzles }) => {
   const navigate = useNavigate();
   const userId = userInfo?.id;
+  // console.log(userId);
 
   // localUser: giữ state cục bộ để realtime cập nhật
   const [localUser, setLocalUser] = useState(userInfo ?? null);
@@ -198,16 +199,18 @@ const Home = ({ puzzles, userInfo, setUserInfo }) => {
         <div className="puzzle-section">
           <h1 className="section-title">Danh sách Puzzle</h1>
           <ul className="puzzle-list">
-            {puzzles.map((puzzle) => (
-              <li key={puzzle.id}>
-                <button
-                  onClick={() => window.location.href = `/puzzle-game/${puzzle.id}`}
-                  className="puzzle-btn"
-                >
-                  🧩 Puzzle {puzzle.name || puzzle.id}
-                </button>
-              </li>
-            ))}
+            {puzzles
+              ?.filter((p) => p.userId === userId) // ⬅ chỉ lấy puzzle của user hiện tại
+              .map((puzzle) => (
+                <li key={puzzle.id}>
+                  <button
+                    onClick={() => window.location.href = `/puzzle-game/${puzzle.id}`}
+                    className="puzzle-btn"
+                  >
+                    🧩 Puzzle {puzzle.name || puzzle.id}
+                  </button>
+                </li>
+              ))}
           </ul>
         </div>
       </div>

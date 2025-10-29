@@ -38,10 +38,12 @@ const App = () => {
 };
 
 const [puzzles, setPuzzles] = useState([]);
-
-    const fetchPuzzles = async () => {
+const fetchPuzzles = async () => {
+      let token = localStorage.getItem("token");
       try {
-        const response = await axiosInstance.get('/puzzles');
+        const response = await axiosInstance.get('/puzzles', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
         setPuzzles(response.data);
       } catch (error) {
         console.error('Error fetching puzzles:', error);
@@ -104,7 +106,7 @@ const fetchProfile = useCallback(async () => {
       <Router>
         <Routes>
           <Route path="/" element={<PrivateRoute><Home userInfo={userInfo} puzzles={puzzles}/></PrivateRoute>}/>
-          <Route path="/home" element={<PrivateRoute><Home userInfo={userInfo} puzzles={puzzles}/></PrivateRoute>}/>
+          <Route path="/home" element={<PrivateRoute><Home userInfo={userInfo} puzzles={puzzles} setPuzzles={setPuzzles}/></PrivateRoute>}/>
           <Route path="/login" element={<Login fetchProfile = {fetchProfile}/>}/>
           <Route path="/create-contest" element={<PrivateRoute><CreateContest userInfo={userInfo}/></PrivateRoute>}/>
           <Route path="/contest/:contestId" element={<PrivateRoute><Contest userInfo={userInfo}/></PrivateRoute>}/>

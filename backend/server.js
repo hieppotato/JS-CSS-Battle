@@ -444,6 +444,7 @@ app.get("/puzzles/:id", async (req, res) => {
 });
 
 app.get('/puzzles', async (req, res) => {
+  // const { user } = req.body;
   try {
     const { data, error } = await supabase  
       .from('puzzles')
