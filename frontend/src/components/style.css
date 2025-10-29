@@ -3,7 +3,7 @@
 :root {
   --cell-size: 55px;   /* kích thước 1 ô (width & height). Giảm xuống 40px để hiển thị nhiều ô hơn */
   --cell-gap: 16px;     /* khoảng cách giữa ô */
-  --cols: 16;          /* số cột tối đa trong lưới - match với inputRefs chiều dài 36 */
+  --cols: 15;          /* số cột tối đa trong lưới - match với inputRefs chiều dài 36 */
   --puzzle-max-width: calc(var(--cell-size) * var(--cols) + var(--cell-gap) * var(--cols) + 80px);
   --hint-col-width: 140px;   /* nếu muốn thay đổi bề rộng column hint thì chỉnh ở đây */
   --hint-gap: 24px;          /* khoảng cách giữa puzzle-form và hint column */
