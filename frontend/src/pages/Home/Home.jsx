@@ -127,6 +127,7 @@ const Home = ({ puzzles, userInfo, setUserInfo, setPuzzles }) => {
         questionId,
         cssPoint: 0,
         userName: effectiveUserName,
+        cssRow: puzzles
       });
 
       // do NOT immediately set to idle — keep 'pending' while waiting for realtime.
@@ -200,7 +201,7 @@ const Home = ({ puzzles, userInfo, setUserInfo, setPuzzles }) => {
           <h1 className="section-title">Danh sách Puzzle</h1>
           <ul className="puzzle-list">
             {puzzles
-              ?.filter((p) => p.userId === userId) // ⬅ chỉ lấy puzzle của user hiện tại
+              ?.filter((p) => p.userId.includes(userId)) // ⬅ chỉ lấy puzzle của user hiện tại
               .map((puzzle) => (
                 <li key={puzzle.id}>
                   <button
