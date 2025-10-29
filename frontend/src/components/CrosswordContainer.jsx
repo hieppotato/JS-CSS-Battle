@@ -331,122 +331,194 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   const [verticalGuess, setVerticalGuess] = useState('');
   const [disableInput, setDisableInput] = useState(false);
   
-    const [localUserInfo, setLocalUserInfo] = useState(userInfo);
   
-    useEffect(() => { setLocalUserInfo(userInfo); }, [userInfo]);
   
-    useProfileRealtime(userInfo?.id, (newRow) => {
-      if (!newRow) return;
+  const [localUserInfo, setLocalUserInfo] = useState(userInfo);
   
-      if (typeof setScoreFromServer === 'function' && newRow.point != null) {
-        setScoreFromServer(Number(newRow.point));
-      }
-      setLocalUserInfo(prev => ({ ...(prev || {}), ...newRow }));
-    });
+  useEffect(() => { setLocalUserInfo(userInfo); }, [userInfo]);
+  
+  useProfileRealtime(userInfo?.id, (newRow) => {
+    if (!newRow) return;
+    
+    if (typeof setScoreFromServer === 'function' && newRow.point != null) {
+      setScoreFromServer(Number(newRow.point));
+    }
+    setLocalUserInfo(prev => ({ ...(prev || {}), ...newRow }));
+  });
   
   useEffect(() => {
     setDisableInput(userInfo?.puzzles?.includes(puzzleId));
   }, [userInfo, puzzleId]);
-
+  
   const puzzle = useMemo(() => {
     if (!puzzleId) return null;
     return getPuzzleById(puzzleId);
   }, [getPuzzleById, puzzleId]);
-
+  
   const vword = useMemo(() => {
     if (!puzzle) return '';
     return typeof puzzle.vword === 'string' ? puzzle.vword : (Array.isArray(puzzle.vword) ? puzzle.vword.join('') : '');
   }, [puzzle]);
-
+  
   const TrueVword = useMemo(() => {
     if (!puzzle) return '';
     return typeof puzzle.true_vword === 'string' ? puzzle.true_vword : (Array.isArray(puzzle.true_vword) ? puzzle.true_vword.join('') : '');
   }, [puzzle]);
-
+  
   const answers = useMemo(() => {
     return Array.isArray(puzzle?.answers) ? puzzle.answers : [];
   }, [puzzle]);
-
+  
   const inputRefs = useRef([]);
   if (!Array.isArray(inputRefs.current) || inputRefs.current.length !== Math.max(answers.length, 0)) {
     inputRefs.current = Array.from({ length: Math.max(answers.length, 0) }, () => Array(36).fill(null));
   }
-
+  
   const handleKeyDown = useCallback((e, i, j) => {
     if (e.key === 'ArrowUp' && inputRefs.current[i - 1]?.[j]) inputRefs.current[i - 1][j].focus();
     else if (e.key === 'ArrowDown' && inputRefs.current[i + 1]?.[j]) inputRefs.current[i + 1][j].focus();
     else if (e.key === 'ArrowLeft' && inputRefs.current[i]?.[j - 1]) inputRefs.current[i][j - 1].focus();
     else if (e.key === 'ArrowRight' && inputRefs.current[i]?.[j + 1]) inputRefs.current[i][j + 1].focus();
   }, []);
-
+  
   // // THÊM MỚI: handleBuyHint đã được chuyển lên đây
   const handleBuyHint = async (rowIndex) => {
-    console.log(`Buy hint for row ${rowIndex}`);
-    if(userInfo.point < 3) 
-    {     alert('Không đủ điểm để mua hint');
+    const state = hintState[rowIndex];
+    
+    // Nếu đang pending -> không bấm lại
+    if (state === "pending") return;
+    
+    // Nếu đã mua -> không mua nữa
+    const bought1 = localUserInfo?.hints?.includes((puzzleId * 10 + rowIndex).toString());
+
+    if (bought1 && countOccurrences(userInfo.hints, puzzleId * 10 + rowIndex) > 1)
       return;
-    }
-    try{
-      const response = await axiosInstance.post('/request-buy-hint', {
+    
+    // Đặt pending
+    setHintState(prev => ({ ...prev, [rowIndex]: "pending" }));
+    startPendingTimeout(rowIndex);
+    
+    try {
+      await axiosInstance.post("/request-buy-hint", {
         userId: userInfo.id,
         rowId: puzzleId * 10 + rowIndex,
-        // // Logic tính toán chi phí hint (rowIndex đã là i + 1)
-        hintCost: localUserInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) ? 5 : 3,
+        hintCost: bought1 ? 5 : 3,
         userName: userInfo.name
+      });
+      
+      // Không đặt submitted tại đây — chờ realtime trả về
+    } catch (err) {
+      console.error(err);
+      setHintState(prev => ({ ...prev, [rowIndex]: "error" }));
+      
+      if (timeoutRefs.current[rowIndex]) {
+        clearTimeout(timeoutRefs.current[rowIndex]);
+        delete timeoutRefs.current[rowIndex];
       }
-      );
-      alert('Yêu cầu mua hint thành công');
-      // // TODO: Bạn cần có cơ chế cập nhật lại `userInfo` sau khi mua hint
-      // // ví dụ: gọi lại hàm fetch user info.
-    } catch (error) {
-      console.error('Error purchasing hint:', error);
-      alert('Failed to purchase hint. Please try again.');
+      
+      setTimeout(() => {
+        if (!mountedRef.current) return;
+        setHintState(prev => ({ ...prev, [rowIndex]: "idle" }));
+      }, 1500);
     }
+  };
+  
+  const [hintState, setHintState] = useState(() =>
+    answers.reduce((acc, _, index) => ({ ...acc, [index + 1]: "idle" }), {})
+  );
+  const timeoutRefs = useRef({});
+  const mountedRef = useRef(true);
+  
+  useEffect(() => {
+  mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      Object.values(timeoutRefs.current).forEach((t) => clearTimeout(t));
+    };
+  }, []);
+  const startPendingTimeout = (rowIndex) => {
+    if (timeoutRefs.current[rowIndex]) {
+      clearTimeout(timeoutRefs.current[rowIndex]);
+      delete timeoutRefs.current[rowIndex];
   }
-
+  
+  timeoutRefs.current[rowIndex] = setTimeout(() => {
+    setHintState(prev => {
+      if (prev[rowIndex] === "pending") {
+        return { ...prev, [rowIndex]: "idle" };
+      }
+      return prev;
+    });
+    delete timeoutRefs.current[rowIndex];
+  }, 20000); // 20s rollback
+  };
+  
+  useEffect(() => {
+    if (!localUserInfo?.hints || !Array.isArray(localUserInfo.hints)) return;
+  
+    answers.forEach((_, idx) => {
+      const id = puzzleId * 10 + (idx + 1);
+      const hasHint =
+        localUserInfo.hints.includes(String(id)) || localUserInfo.hints.includes(id);
+  
+      if (hasHint) {
+        setHintState(prev => {
+          if (prev[idx + 1] !== "submitted") {
+            if (timeoutRefs.current[idx + 1]) {
+              clearTimeout(timeoutRefs.current[idx + 1]);
+              delete timeoutRefs.current[idx + 1];
+            }
+            return { ...prev, [idx + 1]: "submitted" };
+          }
+          return prev;
+        });
+      }
+    });
+  }, [localUserInfo?.hints, answers, puzzleId]);
+  
   if (loadingPuzzles) return <div>Loading puzzles…</div>;
   if (puzzlesError) return <div>Error loading puzzles.</div>;
   if (!puzzle) return <div>Puzzle not found.</div>;
-
+  
   function countOccurrences(array, item) {
     const vitem = item.toString();
     return array.reduce((count, current) => {
       return current === vitem ? count + 1 : count;
     }, 0);
   }
-
+  
   // console.log(countOccurrences(userInfo.hints, "111"));
-
+  
   const handleVerticalSubmit = async () => {
-  if (!verticalGuess.trim()) {
-    alert('Vui lòng nhập chữ hàng dọc.');
-    return;
-  }
-  const normalizedGuess = verticalGuess.trim().toLowerCase();
-  const correctVWord = TrueVword.toLowerCase();
-
-  if (normalizedGuess === correctVWord) {
-    alert('Chính xác! Bạn đã đoán đúng chữ hàng dọc 🎉');
-    try{
-      const response = await axiosInstance.post('/complete-vword', {
-        userId: userInfo.id,
-        puzzleId,
-        reward: 100
-      });
-      if (response?.data?.points != null && typeof setScoreFromServer === 'function') {
-        setScoreFromServer(Number(response.data.points));
-        setDisableInput(response.data.puzzles?.includes(puzzleId));
-      }
-    } catch (error) {
-      console.error('Error completing vertical word:', error);
-      alert('Đã xảy ra lỗi khi gửi đáp án. Vui lòng thử lại.');
+    if (!verticalGuess.trim()) {
+      alert('Vui lòng nhập chữ hàng dọc.');
+      return;
     }
-  } else {
-    try {
-      const res = await axiosInstance.put('/minus-point', {
-        userId: userInfo.id,
-        point: 10
-      })
+    const normalizedGuess = verticalGuess.trim().toLowerCase();
+    const correctVWord = TrueVword.toLowerCase();
+    
+    if (normalizedGuess === correctVWord) {
+      alert('Chính xác! Bạn đã đoán đúng chữ hàng dọc 🎉');
+      try{
+        const response = await axiosInstance.post('/complete-vword', {
+          userId: userInfo.id,
+          puzzleId,
+          reward: 100
+        });
+        if (response?.data?.points != null && typeof setScoreFromServer === 'function') {
+          setScoreFromServer(Number(response.data.points));
+          setDisableInput(response.data.puzzles?.includes(puzzleId));
+        }
+      } catch (error) {
+        console.error('Error completing vertical word:', error);
+        alert('Đã xảy ra lỗi khi gửi đáp án. Vui lòng thử lại.');
+      }
+    } else {
+      try {
+        const res = await axiosInstance.put('/minus-point', {
+          userId: userInfo.id,
+          point: 10
+        })
       if(res?.data){
         console.log(res?.data);
         setScoreFromServer(Number(res?.data?.data));
@@ -459,9 +531,9 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   }
 };
 
-  
 
-    return (
+
+return (
     <div className='page-root'>
       <div className="draw-center">
         <div className="card cp-card">
@@ -487,29 +559,28 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
               {/* // // THÊM MỚI: Cột 2: Các button hint */}
               <div className="hint-button-column">
                 {/* Lặp qua 'answers' để tạo số lượng button tương ứng */}
-                {answers.map((_, i) => (
-                  <div key={`hint-btn-wrapper-${i}`} className="hint-button-wrapper">
-                    {localUserInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) ? (
+                {answers.map((_, i) => {
+                  const bought1 = localUserInfo?.hints?.includes(String(puzzleId * 10 + (i + 1)));
+
+                  return (
+                    <div key={`hint-btn-wrapper-${i}`} className="hint-button-wrapper">
                       <button
                         type="button"
-                        className="btn hint-button" // // Dùng class mới
-                        onClick={() => handleBuyHint(i + 1)} // // i + 1 là rowIndex (1-based)
-                        hidden={(countOccurrences(localUserInfo?.hints, puzzleId * 10 + i + 1) > 1)}
-                      >
-                        Mua hint 2 (-5 điểm) 
-                      </button>
-                    ) : (
-                      // Chưa mua hint 1 -> Hiển thị nút mua hint 1
-                      <button
-                        type="button"
-                        className="btn hint-button" // // Dùng class mới
+                        disabled={hintState[i + 1] === "pending" || hintState[i + 1] === "submitted"}
+                        className={`btn hint-button ${hintState[i + 1]}`}
                         onClick={() => handleBuyHint(i + 1)}
                       >
-                        Mua hint 1 (-3 điểm)
+                        {hintState[i + 1] === "pending"
+                          ? "Đang xử lý..."
+                          : hintState[i + 1] === "submitted"
+                          ? "Đã mua"
+                          : bought1
+                          ? "Mua hint 2 (-5 điểm)"
+                          : "Mua hint 1 (-3 điểm)"}
                       </button>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div> {/* // // Kết thúc .hint-button-column */}
 
             </div> {/* // // Kết thúc .puzzle-with-hints */}
