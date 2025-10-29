@@ -12,6 +12,7 @@ import PrivateRoute from './components/PrivateRoute';
 import CreatePuzzle from "./pages/PuzzleGame/CreatePuzzle";
 // import UserDashboard from './pages/Home/UserDashboard';
 import AdminRequests from "./pages/Admin/AdminRequests";
+import AdminRequestsHints from "./pages/Admin/AdminRequestsHints";
 
 const App = () => {
 
@@ -116,6 +117,7 @@ const fetchProfile = useCallback(async () => {
           <Route path="/login" element={<Login/>}/>
           {/* <Route path="/dashboard" element={<UserDashboard/>}/> */}
           <Route path="/admin/requests" element={<PrivateRoute><AdminRequests userInfo={userInfo}/></PrivateRoute>}/>
+          <Route path="/admin/hints" element={<PrivateRoute><AdminRequestsHints userInfo={userInfo}/></PrivateRoute>}/>
         </Routes>
       </Router>
     </div>
