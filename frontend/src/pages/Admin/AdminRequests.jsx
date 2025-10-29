@@ -203,12 +203,12 @@ const AdminRequests = ({ userInfo }) => {
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Created At</th>
+                  <th>Hàng cần gửi mật thư</th>
                   <th>Question ID</th>
                   <th>Type</th>
                   <th>Status</th>
                   <th>Hint Cost</th>
-                  <th>User ID</th>
+                  <th>Tên đội</th>
                   <th>CSS Point</th>
                   <th>Hành động</th>
                 </tr>
@@ -225,9 +225,7 @@ const AdminRequests = ({ userInfo }) => {
                     <tr key={req.id}>
                       <td>{req.id}</td>
                       <td>
-                        {req.created_at
-                          ? dayjs(req.created_at).format("YYYY-MM-DD HH:mm")
-                          : "-"}
+                        {req.cssRowId}
                       </td>
                       <td>{req.questionId ?? req.question_id ?? "-"}</td>
                       <td>{req.type}</td>

@@ -120,7 +120,7 @@ const Home = ({ puzzles, userInfo, setUserInfo, setPuzzles }) => {
     // start fallback timeout waiting for realtime/version confirmation
     startPendingTimeout(questionId);
     const cssRowId = puzzles?.filter((p) => p.userId.includes(userId));
-    console.log(cssRowId[0].answers[questionId]);
+    // console.log(cssRowId[0].answers[questionId]);
     try {
       // send request (server sẽ tạo request row; admin duyệt sau)
       await axiosInstance.post("/request-submit-css", {
