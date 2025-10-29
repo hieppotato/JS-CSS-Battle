@@ -128,7 +128,7 @@ const Home = ({ puzzles, userInfo, setUserInfo, setPuzzles }) => {
         questionId,
         cssPoint: 0,
         userName: effectiveUserName,
-        cssRowId : cssRowId[0].answers[questionId]
+        cssRowId : cssRowId[0].answers[questionId - 1]
       });
 
       // do NOT immediately set to idle — keep 'pending' while waiting for realtime.
