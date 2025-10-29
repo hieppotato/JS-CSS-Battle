@@ -330,7 +330,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   const [count, setCount] = useState(0);
   const [verticalGuess, setVerticalGuess] = useState('');
   const [disableInput, setDisableInput] = useState(false);
-  
+  const [hintCooldowns, setHintCooldowns] = useState({});
     const [localUserInfo, setLocalUserInfo] = useState(userInfo);
   
     useEffect(() => { setLocalUserInfo(userInfo); }, [userInfo]);
@@ -380,29 +380,36 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   }, []);
 
   // // THÊM MỚI: handleBuyHint đã được chuyển lên đây
-  const handleBuyHint = async (rowIndex) => {
-    console.log(`Buy hint for row ${rowIndex}`);
-    if(userInfo.point < 3) 
-    {     alert('Không đủ điểm để mua hint');
-      return;
-    }
-    try{
-      const response = await axiosInstance.post('/request-buy-hint', {
-        userId: userInfo.id,
-        rowId: puzzleId * 10 + rowIndex,
-        // // Logic tính toán chi phí hint (rowIndex đã là i + 1)
-        hintCost: localUserInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) ? 5 : 3,
-        userName: userInfo.name
-      }
-      );
-      alert('Yêu cầu mua hint thành công');
-      // // TODO: Bạn cần có cơ chế cập nhật lại `userInfo` sau khi mua hint
-      // // ví dụ: gọi lại hàm fetch user info.
-    } catch (error) {
-      console.error('Error purchasing hint:', error);
-      alert('Failed to purchase hint. Please try again.');
-    }
+const handleBuyHint = async (rowIndex) => {
+  console.log(`Buy hint for row ${rowIndex}`);
+
+  if (userInfo.point < 3) {
+    alert('Không đủ điểm để mua hint');
+    return;
   }
+
+  // đặt cooldown
+  setHintCooldowns(prev => ({
+    ...prev,
+    [rowIndex]: Date.now() + 20000 // 20 giây
+  }));
+
+  try {
+    const response = await axiosInstance.post('/request-buy-hint', {
+      userId: userInfo.id,
+      rowId: puzzleId * 10 + rowIndex,
+      hintCost: localUserInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) ? 5 : 3,
+      userName: userInfo.name
+    });
+
+    alert('Yêu cầu mua hint thành công');
+
+  } catch (error) {
+    console.error('Error purchasing hint:', error);
+    alert('Failed to purchase hint. Please try again.');
+  }
+}
+
 
   if (loadingPuzzles) return <div>Loading puzzles…</div>;
   if (puzzlesError) return <div>Error loading puzzles.</div>;
@@ -459,7 +466,19 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   }
 };
 
-  
+  useEffect(() => {
+  const interval = setInterval(() => {
+    setHintCooldowns(prev => {
+      const updated = {...prev};
+      Object.keys(updated).forEach(key => {
+        if (updated[key] < Date.now()) delete updated[key];
+      });
+      return updated;
+    });
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, []);
 
     return (
     <div className='page-root'>
@@ -487,29 +506,36 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
               {/* // // THÊM MỚI: Cột 2: Các button hint */}
               <div className="hint-button-column">
                 {/* Lặp qua 'answers' để tạo số lượng button tương ứng */}
-                {answers.map((_, i) => (
-                  <div key={`hint-btn-wrapper-${i}`} className="hint-button-wrapper">
-                    {localUserInfo?.hints.includes((puzzleId * 10 + i + 1).toString()) ? (
+                {answers.map((_, i) => {
+                  const rowIndex = i + 1;
+                  const cooldownEnd = hintCooldowns[rowIndex];
+
+                  let secondsLeft = 0;
+                  if (cooldownEnd) {
+                    secondsLeft = Math.ceil((cooldownEnd - Date.now()) / 1000);
+                  }
+
+                  const disabled = secondsLeft > 0;
+
+                  return (
+                    <div key={`hint-btn-wrapper-${i}`} className="hint-button-wrapper">
                       <button
                         type="button"
-                        className="btn hint-button" // // Dùng class mới
-                        onClick={() => handleBuyHint(i + 1)} // // i + 1 là rowIndex (1-based)
-                        hidden={(countOccurrences(localUserInfo?.hints, puzzleId * 10 + i + 1) > 1)}
+                        className="btn hint-button"
+                        disabled={disabled}
+                        onClick={() => handleBuyHint(rowIndex)}
+                        hidden={ localUserInfo?.hints.includes((puzzleId * 10 + rowIndex).toString()) && 
+                                countOccurrences(localUserInfo?.hints, puzzleId * 10 + rowIndex) > 1}
                       >
-                        Mua hint 2 (-5 điểm) 
+                        {disabled ? `Chờ ${secondsLeft}s...` :
+                          localUserInfo?.hints.includes((puzzleId * 10 + rowIndex).toString())
+                            ? 'Mua hint 2 (-5 điểm)'
+                            : 'Mua hint 1 (-3 điểm)'
+                        }
                       </button>
-                    ) : (
-                      // Chưa mua hint 1 -> Hiển thị nút mua hint 1
-                      <button
-                        type="button"
-                        className="btn hint-button" // // Dùng class mới
-                        onClick={() => handleBuyHint(i + 1)}
-                      >
-                        Mua hint 1 (-3 điểm)
-                      </button>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  )
+                })}
               </div> {/* // // Kết thúc .hint-button-column */}
 
             </div> {/* // // Kết thúc .puzzle-with-hints */}
