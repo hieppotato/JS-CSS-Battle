@@ -2,8 +2,8 @@ import axios from "axios";
 import { handleLogout } from "./logout";
 
 const axiosInstance = axios.create({
-  // baseURL: "https://js-css-battle.onrender.com", // backend APIk
-  baseURL: "http://localhost:8000", // backend APIk
+  baseURL: "https://js-css-battle.onrender.com", // backend APIk
+  // baseURL: "http://localhost:8000", // backend APIk
   headers: {
     "Content-Type": "application/json",
   },
