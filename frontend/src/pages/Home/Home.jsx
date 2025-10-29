@@ -120,7 +120,7 @@ const Home = ({ puzzles, userInfo, setUserInfo, setPuzzles }) => {
     // start fallback timeout waiting for realtime/version confirmation
     startPendingTimeout(questionId);
     const cssRowId = puzzles?.filter((p) => p.userId.includes(userId));
-    console.log(cssRowId[0]);
+    console.log(cssRowId[0].answers[questionId]);
     try {
       // send request (server sẽ tạo request row; admin duyệt sau)
       await axiosInstance.post("/request-submit-css", {
@@ -128,6 +128,7 @@ const Home = ({ puzzles, userInfo, setUserInfo, setPuzzles }) => {
         questionId,
         cssPoint: 0,
         userName: effectiveUserName,
+        cssRowId : cssRowId[0].answers[questionId]
       });
 
       // do NOT immediately set to idle — keep 'pending' while waiting for realtime.
