@@ -401,7 +401,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
     try {
       await axiosInstance.post("/request-buy-hint", {
         userId: userInfo.id,
-        rowId: puzzleId * 10 + rowIndex,
+        rowId: rowIndex,
         hintCost: bought1 ? 5 : 3,
         userName: userInfo.name
       });
