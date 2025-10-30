@@ -1,7 +1,6 @@
 // src/pages/AdminRequests.jsx
 import React, { useEffect, useState, useRef } from "react";
 import axiosInstance from "../../utils/axiosInstance";
-import dayjs from "dayjs";
 import "../Home/home.css";
 import { supabase } from "../../utils/supabaseClient";
 import { useNavigate } from "react-router-dom";
@@ -13,32 +12,31 @@ const AdminRequests = ({ userInfo }) => {
   const mountedRef = useRef(true);
   const navigate = useNavigate();
 
-  // helper: parse created_at into timestamp for sorting safely
+  // convert timestamp -> safe sorting
   const createdAtTs = (r) => {
-    if (!r) return 0;
-    const v = r.created_at ?? r.createdAt ?? r.createdAtTs ?? null;
-    if (!v) return 0;
+    const v = r?.created_at || r?.createdAt;
     const t = Date.parse(v);
     return Number.isNaN(t) ? 0 : t;
   };
 
-  // sort ascending by created_at (old -> new)
-  const sortRequestsAsc = (arr) => {
-    return (arr || []).slice().sort((a, b) => {
-      return createdAtTs(a) - createdAtTs(b);
-    });
-  };
+  const sortRequestsAsc = (arr) =>
+    arr.slice().sort((a, b) => createdAtTs(a) - createdAtTs(b));
 
-  // initial load (only pending)
+  // ✅ Only fetch pending submit-css
   const fetchRequests = async () => {
     try {
       setLoading(true);
       const res = await axiosInstance.get("/get-requests");
-      // keep only pending and sort ascending
-      const pendingOnly = (res.data || []).filter((r) => r.status === "pending");
-      const sorted = sortRequestsAsc(pendingOnly);
-      if (!mountedRef.current) return;
-      setRequests(sorted);
+
+      const pendingCss = (res.data || []).filter(
+        (r) =>
+          r.status === "pending" &&
+          (r.type === "submit_css" || r.type === "submit-css")
+      );
+
+      const sorted = sortRequestsAsc(pendingCss);
+
+      if (mountedRef.current) setRequests(sorted);
     } catch (err) {
       console.error("Fetch requests error:", err);
       alert("Không thể tải danh sách request");
@@ -51,149 +49,117 @@ const AdminRequests = ({ userInfo }) => {
     mountedRef.current = true;
     fetchRequests();
 
-    // subscribe realtime to requests table
+    // ✅ Realtime chỉ xử lý submit-css
     const channel = supabase
       .channel("public:requests")
+      // INSERT
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "requests" },
         (payload) => {
-          try {
-            const newRow = payload.new;
-            if (!newRow) return;
-            // only care pending requests
-            if (newRow.status === "pending") {
-              setRequests((prev) => {
-                // avoid duplicate
-                if (prev.some((r) => String(r.id) === String(newRow.id))) return prev;
-                // append to end (old -> new order)
-                const next = [...prev, newRow];
-                return sortRequestsAsc(next);
-              });
-            }
-          } catch (e) {
-            console.error("Realtime INSERT handler error:", e);
-          }
+          const newRow = payload.new;
+          if (
+            newRow?.status !== "pending" ||
+            !["submit_css", "submit-css"].includes(newRow.type)
+          )
+            return;
+
+          setRequests((prev) => {
+            if (prev.some((r) => r.id === newRow.id)) return prev;
+            return sortRequestsAsc([...prev, newRow]);
+          });
         }
       )
+      // UPDATE
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "requests" },
         (payload) => {
-          try {
-            const newRow = payload.new;
-            const oldRow = payload.old;
-            if (!newRow) return;
+          const newRow = payload.new;
+          if (!newRow) return;
 
-            setRequests((prev) => {
-              const exists = prev.some((r) => String(r.id) === String(newRow.id));
+          setRequests((prev) => {
+            const exists = prev.some((r) => r.id === newRow.id);
 
-              if (newRow.status === "pending") {
-                // add or update, keep chronological order
-                if (exists) {
-                  const updated = prev.map((r) =>
-                    String(r.id) === String(newRow.id) ? newRow : r
-                  );
-                  return sortRequestsAsc(updated);
-                } else {
-                  const appended = [...prev, newRow];
-                  return sortRequestsAsc(appended);
-                }
-              } else {
-                // not pending anymore -> remove if existed
-                return prev.filter((r) => String(r.id) !== String(newRow.id));
+            // still pending submit-css → add/update
+            if (
+              newRow.status === "pending" &&
+              ["submit_css", "submit-css"].includes(newRow.type)
+            ) {
+              if (exists) {
+                return sortRequestsAsc(
+                  prev.map((r) => (r.id === newRow.id ? newRow : r))
+                );
               }
-            });
-          } catch (e) {
-            console.error("Realtime UPDATE handler error:", e);
-          }
+              return sortRequestsAsc([...prev, newRow]);
+            }
+
+            // no longer pending → remove
+            return prev.filter((r) => r.id !== newRow.id);
+          });
         }
       )
+      // DELETE
       .on(
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "requests" },
         (payload) => {
-          try {
-            const oldRow = payload.old;
-            if (!oldRow) return;
-            setRequests((prev) => prev.filter((r) => String(r.id) !== String(oldRow.id)));
-          } catch (e) {
-            console.error("Realtime DELETE handler error:", e);
-          }
+          const oldRow = payload.old;
+          if (!oldRow) return;
+
+          setRequests((prev) => prev.filter((r) => r.id !== oldRow.id));
         }
       )
-      .subscribe((status) => {
-        console.log("Supabase requests channel status:", status);
-      });
+      .subscribe();
 
     return () => {
       mountedRef.current = false;
       try {
         supabase.removeChannel(channel);
-      } catch (e) {
-        // ignore
-      }
+      } catch {}
     };
   }, []);
 
-  // approve handler (optimistic UI: remove row immediately)
+  // ✅ Approve only submit-css
   const handleApprove = async (reqItem) => {
     if (approving[reqItem.id]) return;
     setApproving((prev) => ({ ...prev, [reqItem.id]: true }));
 
-    // optimistic remove so admin sees immediate feedback
-    setRequests((prev) => prev.filter((r) => String(r.id) !== String(reqItem.id)));
+    // Optimistic UI remove
+    setRequests((prev) => prev.filter((r) => r.id !== reqItem.id));
 
     try {
-      if (reqItem.type === "buy_hint") {
-        await axiosInstance.put("/approve-buy-hint", {
-          requestId: reqItem.id,
-          userId: reqItem.userId,
-          hintCost: reqItem.hintCost,
-          questionId: reqItem.questionId,
-        });
-      } else if (reqItem.type === "submit_css" || reqItem.type === "submit-css") {
-        await axiosInstance.put("/approve-css-submission", {
-          requestId: reqItem.id,
-          userId: reqItem.userId,
-          rowId: reqItem.questionId ?? reqItem.rowId,
-          cssPoint: reqItem.cssPoint,
-        });
-      } else {
-        throw new Error(`Unknown request type: ${reqItem.type}`);
-      }
-
-      // server will update request.status -> realtime will reflect and keep list consistent
+      await axiosInstance.put("/approve-css-submission", {
+        requestId: reqItem.id,
+        userId: reqItem.userId,
+        rowId: reqItem.questionId ?? reqItem.rowId,
+        cssPoint: reqItem.cssPoint,
+      });
     } catch (err) {
       console.error("Approve error:", err);
       alert("Duyệt thất bại!");
-      // rollback: re-add the request if approval failed, then sort
-      setRequests((prev) => {
-        if (prev.some((r) => String(r.id) === String(reqItem.id))) return prev;
-        const restored = [...prev, reqItem];
-        return sortRequestsAsc(restored);
-      });
+
+      // rollback
+      setRequests((prev) => sortRequestsAsc([...prev, reqItem]));
     } finally {
       setApproving((prev) => {
-        const copy = { ...prev };
-        delete copy[reqItem.id];
-        return copy;
+        const c = { ...prev };
+        delete c[reqItem.id];
+        return c;
       });
     }
   };
 
-  // restrict non-admins out
+  // ✅ block non-admin
   useEffect(() => {
     if (!userInfo) return;
-    if (userInfo.role !== "admin") {
-      navigate("/home", { replace: true });
-    }
+    if (userInfo.role !== "admin") navigate("/home", { replace: true });
   }, [userInfo, navigate]);
 
   return (
     <div className="home-container">
       <div className="css-section" style={{ width: "100%" }}>
-        <h1 className="section-title">🛠️ Quản lý Request đang chờ duyệt</h1>
+        <h1 className="section-title">🛠️ Request Nộp Bài CSS chờ duyệt</h1>
 
         {loading ? (
           <div className="text-center text-gray-300 text-lg mt-10">Đang tải...</div>
@@ -203,40 +169,32 @@ const AdminRequests = ({ userInfo }) => {
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Hàng cần gửi mật thư</th>
+                  <th>CSS Row</th>
                   <th>Question ID</th>
-                  <th>Type</th>
-                  <th>Status</th>
-                  <th>Hint Cost</th>
+                  <th>Điểm CSS</th>
                   <th>Tên đội</th>
-                  <th>CSS Point</th>
                   <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
                 {requests.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="text-center py-6 text-gray-400">
-                      ✅ Không có request đang chờ duyệt
+                    <td colSpan="6" className="text-center py-6 text-gray-400">
+                      ✅ Không có request nộp bài đang chờ duyệt
                     </td>
                   </tr>
                 ) : (
                   requests.map((req) => (
                     <tr key={req.id}>
                       <td>{req.id}</td>
-                      <td>
-                        {req.cssRowId}
-                      </td>
-                      <td>{req.questionId ?? req.question_id ?? "-"}</td>
-                      <td>{req.type}</td>
-                      <td className="text-yellow-400 font-semibold">{req.status}</td>
-                      <td>{req.hintCost ?? "-"}</td>
-                      <td className="text-xs">{req.userName ?? req.userId}</td>
+                      <td>{req.cssRowId}</td>
+                      <td>{req.questionId ?? "-"}</td>
                       <td>{req.cssPoint ?? "-"}</td>
+                      <td className="text-xs">{req.userName ?? req.userId}</td>
                       <td className="text-center">
                         <button
                           onClick={() => handleApprove(req)}
-                          disabled={!!approving[req.id]}
+                          disabled={approving[req.id]}
                           className={`submit-btn ${
                             approving[req.id] ? "opacity-60 cursor-not-allowed" : ""
                           }`}
