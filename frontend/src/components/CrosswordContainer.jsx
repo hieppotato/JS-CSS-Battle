@@ -5,22 +5,6 @@ import axiosInstance from '../utils/axiosInstance';
 import useProfileRealtime from '../hooks/useProfileRealtime';
 import './style.css'; 
 
-const START_TIME = new Date("2025-30-10T23:00:00").getTime(); // Thời gian bắt đầu
-const END_TIME = new Date("2025-31-10T00:00:00").getTime(); // Thời gian kết thúc
-// ========================================
-
-
-// Hàm format thời gian
-function formatTime(ms) {
-  if (!ms || ms <= 0) return "00:00:00";
-  let total = Math.floor(ms / 1000);
-  const h = Math.floor(total / 3600);
-  total %= 3600;
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-}
-
 // DrawCrossword component (ĐÃ LOẠI BỎ LOGIC RENDER BUTTON)
 export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, puzzleId, userInfo, setScoreFromServer, setCount, setDisableInput }) => {
   const { colors, timerRef, setTimerRef } = useContext(AppContext);
@@ -339,6 +323,23 @@ const handleInputChange = async (e, i, j, currInitPosition) => {
 );
 };
 
+// 30 Oct 2025 23:00 -> 31 Oct 2025 01:00
+const START_TIME = new Date("2025-10-30T23:00:00").getTime();
+const END_TIME   = new Date("2025-10-31T23:59:00").getTime();
+
+// ========================================
+
+
+// Hàm format thời gian
+function formatTime(ms) {
+  if (!ms || ms <= 0) return "00:00:00";
+  let total = Math.floor(ms / 1000);
+  const h = Math.floor(total / 3600);
+  total %= 3600;
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
 
 // CrosswordContainer component (ĐÃ THÊM LOGIC RENDER BUTTON HINT)
 const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
@@ -347,63 +348,18 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   const [verticalGuess, setVerticalGuess] = useState('');
   const [disableInput, setDisableInput] = useState(false);
   
-  const [inTimeRange, setInTimeRange] = useState(true);
-  // --- Khai báo START_TIME / END_TIME ở đầu file ---
-// const START_TIME = ... ; const END_TIME = ...  (như đã có)
-
-// States
-const [timeLeft, setTimeLeft] = useState(() => {
-  const now = Date.now();
-  if (now < START_TIME) return START_TIME - now;
-  if (now <= END_TIME) return END_TIME - now;
-  return 0;
-});
-const [timePhase, setTimePhase] = useState(() => {
-  const now = Date.now();
-  if (now < START_TIME) return 'before';
-  if (now <= END_TIME) return 'during';
-  return 'after';
-});
-
-const timerRef = useRef(null);
-
-useEffect(() => {
-  // cleanup existing (safety)
-  if (timerRef.current) {
-    clearInterval(timerRef.current);
-    timerRef.current = null;
-  }
-
-  const tick = () => {
+    // thay thế dòng: const [inTimeRange, setInTimeRange] = useState(true);
+  const [inTimeRange, setInTimeRange] = useState(() => {
     const now = Date.now();
-    if (now < START_TIME) {
-      setTimePhase('before');
-      setTimeLeft(START_TIME - now);
-    } else if (now <= END_TIME) {
-      setTimePhase('during');
-      setTimeLeft(END_TIME - now);
-    } else {
-      setTimePhase('after');
-      setTimeLeft(0);
-    }
-  };
+    return now >= START_TIME && now <= END_TIME;
+  });
 
-  // chạy ngay lập tức để không chờ 1s
-  tick();
+  // --- Khai báo START_TIME / END_TIME ở đầu file --- 
+  // (giữ nguyên chỗ bạn đã khai báo START_TIME / END_TIME)
 
-  // tạo interval và lưu ref để clear on unmount
-  timerRef.current = setInterval(tick, 1000);
-
-  return () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
-  // Nếu START_TIME / END_TIME có thể thay đổi runtime thì thêm vào dependency array:
-  // }, [START_TIME, END_TIME]);
-}, []);
-
+  // States
+  
+  
   
   const [localUserInfo, setLocalUserInfo] = useState(userInfo);
   
@@ -461,9 +417,9 @@ useEffect(() => {
     if (state === "pending") return;
     
     // Nếu đã mua -> không mua nữa
-    const bought1 = localUserInfo?.hints?.includes((puzzleId * 10 + rowIndex).toString());
-
-    if (bought1 && countOccurrences(userInfo.hints, puzzleId * 10 + rowIndex) > 1)
+    const bought1 = localUserInfo?.hints?.includes((rowIndex).toString());
+    
+    if (bought1 && countOccurrences(userInfo.hints, rowIndex) > 1)
       return;
     
     // Đặt pending
@@ -495,6 +451,61 @@ useEffect(() => {
     }
   };
   
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const now = Date.now();
+    if (now < START_TIME) return Math.max(0, START_TIME - now);
+    if (now <= END_TIME) return Math.max(0, END_TIME - now);
+    return 0;
+  });
+  const [timePhase, setTimePhase] = useState(() => {
+    const now = Date.now();
+    if (now < START_TIME) return 'before';
+    if (now <= END_TIME) return 'during';
+    return 'after';
+  });
+
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    // cleanup existing (safety)
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    const tick = () => {
+      const now = Date.now();
+
+      // cập nhật phase + timeLeft
+      if (now < START_TIME) {
+        setTimePhase('before');
+        setTimeLeft(Math.max(0, START_TIME - now)); // thời gian đến lúc bắt đầu
+      } else if (now <= END_TIME) {
+        setTimePhase('during');
+        setTimeLeft(Math.max(0, END_TIME - now)); // thời gian còn lại
+      } else {
+        setTimePhase('after');
+        setTimeLeft(0);
+      }
+
+      // **RẤT QUAN TRỌNG**: cập nhật inTimeRange để UI phản ánh đúng
+      setInTimeRange(now >= START_TIME && now <= END_TIME);
+    };
+
+    // chạy ngay lập tức để UI không chờ 1s
+    tick();
+
+    // tạo interval và lưu ref để clear on unmount
+    timerRef.current = setInterval(tick, 1000);
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+    // nếu START_TIME/END_TIME thay đổi runtime thì thêm dependency: [START_TIME, END_TIME]
+  }, []);
   const [hintState, setHintState] = useState(() =>
     answers.reduce((acc, _, index) => ({ ...acc, [index + 1]: "idle" }), {})
   );
@@ -637,8 +648,8 @@ return (
               <div className="hint-button-column">
                 {/* Lặp qua 'answers' để tạo số lượng button tương ứng */}
                 {answers.map((_, i) => {
-                  const bought1 = localUserInfo?.hints?.includes(String(puzzleId * 10 + (i + 1)));
-
+                  const bought1 = localUserInfo?.hints?.includes(String((i + 1)));
+                  // const bought2 = countOccurrences(userInfo?.hints, String((i + 1)));
                   return (
                     <div key={`hint-btn-wrapper-${i}`} className="hint-button-wrapper">
                       <button

@@ -13,6 +13,7 @@ import CreatePuzzle from "./pages/PuzzleGame/CreatePuzzle";
 // import UserDashboard from './pages/Home/UserDashboard';
 import AdminRequests from "./pages/Admin/AdminRequests";
 import AdminRequestsHints from "./pages/Admin/AdminRequestsHints";
+import TimeLeftClock from "./pages/Home/TimeCountDown";
 
 const App = () => {
 
@@ -118,6 +119,7 @@ const fetchProfile = useCallback(async () => {
           {/* <Route path="/dashboard" element={<UserDashboard/>}/> */}
           <Route path="/admin/requests" element={<PrivateRoute><AdminRequests userInfo={userInfo}/></PrivateRoute>}/>
           <Route path="/admin/hints" element={<PrivateRoute><AdminRequestsHints userInfo={userInfo}/></PrivateRoute>}/>
+          <Route path="/time-left" element={<PrivateRoute><TimeLeftClock initialTime={300}/></PrivateRoute>}/>
         </Routes>
       </Router>
     </div>
