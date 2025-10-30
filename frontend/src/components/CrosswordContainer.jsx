@@ -450,7 +450,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
       return prev;
     });
     delete timeoutRefs.current[rowIndex];
-  }, 20000); // 20s rollback
+  }, 1800000); // 30 min rollback
   };
   
   useEffect(() => {
