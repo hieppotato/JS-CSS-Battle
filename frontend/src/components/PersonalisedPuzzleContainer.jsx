@@ -31,7 +31,7 @@ const PersonalisedPuzzleContainer = () => {
         <div className="puzzle-container">
             <h3 className="puzzle-title">Tạo ô chữ</h3>
 
-            <form className="puzzle-form">
+            <form className="">
                 <div className="puzzle-row">
                     <input
                         type="text"

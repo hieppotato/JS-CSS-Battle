@@ -1,6 +1,6 @@
 import React from 'react'
 import PersonalisedPuzzleContainer from '../../components/PersonalisedPuzzleContainer'
-import '../../styles/main.css'
+// import '../../styles/main.css'
 
 const CreatePuzzle = () => {
   return (
