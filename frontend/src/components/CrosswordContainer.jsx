@@ -324,8 +324,8 @@ const handleInputChange = async (e, i, j, currInitPosition) => {
 };
 
 // 30 Oct 2025 23:00 -> 31 Oct 2025 01:00
-const START_TIME = new Date("2025-10-30T23:00:00").getTime();
-const END_TIME   = new Date("2025-10-31T23:59:00").getTime();
+const START_TIME = new Date("2025-11-01T14:05:00").getTime();
+const END_TIME   = new Date("2025-11-01T16:35:00").getTime();
 
 // ========================================
 
