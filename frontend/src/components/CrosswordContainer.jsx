@@ -5,6 +5,22 @@ import axiosInstance from '../utils/axiosInstance';
 import useProfileRealtime from '../hooks/useProfileRealtime';
 import './style.css'; 
 
+const START_TIME = new Date("2025-30-10T23:00:00").getTime(); // Thời gian bắt đầu
+const END_TIME = new Date("2025-31-10T00:00:00").getTime(); // Thời gian kết thúc
+// ========================================
+
+
+// Hàm format thời gian
+function formatTime(ms) {
+  if (!ms || ms <= 0) return "00:00:00";
+  let total = Math.floor(ms / 1000);
+  const h = Math.floor(total / 3600);
+  total %= 3600;
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
 // DrawCrossword component (ĐÃ LOẠI BỎ LOGIC RENDER BUTTON)
 export const DrawCrossword = ({ showAnswers = false, handleKeyDown, inputRefs, puzzleId, userInfo, setScoreFromServer, setCount, setDisableInput }) => {
   const { colors, timerRef, setTimerRef } = useContext(AppContext);
@@ -331,7 +347,63 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
   const [verticalGuess, setVerticalGuess] = useState('');
   const [disableInput, setDisableInput] = useState(false);
   
-  
+  const [inTimeRange, setInTimeRange] = useState(true);
+  // --- Khai báo START_TIME / END_TIME ở đầu file ---
+// const START_TIME = ... ; const END_TIME = ...  (như đã có)
+
+// States
+const [timeLeft, setTimeLeft] = useState(() => {
+  const now = Date.now();
+  if (now < START_TIME) return START_TIME - now;
+  if (now <= END_TIME) return END_TIME - now;
+  return 0;
+});
+const [timePhase, setTimePhase] = useState(() => {
+  const now = Date.now();
+  if (now < START_TIME) return 'before';
+  if (now <= END_TIME) return 'during';
+  return 'after';
+});
+
+const timerRef = useRef(null);
+
+useEffect(() => {
+  // cleanup existing (safety)
+  if (timerRef.current) {
+    clearInterval(timerRef.current);
+    timerRef.current = null;
+  }
+
+  const tick = () => {
+    const now = Date.now();
+    if (now < START_TIME) {
+      setTimePhase('before');
+      setTimeLeft(START_TIME - now);
+    } else if (now <= END_TIME) {
+      setTimePhase('during');
+      setTimeLeft(END_TIME - now);
+    } else {
+      setTimePhase('after');
+      setTimeLeft(0);
+    }
+  };
+
+  // chạy ngay lập tức để không chờ 1s
+  tick();
+
+  // tạo interval và lưu ref để clear on unmount
+  timerRef.current = setInterval(tick, 1000);
+
+  return () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+  // Nếu START_TIME / END_TIME có thể thay đổi runtime thì thêm vào dependency array:
+  // }, [START_TIME, END_TIME]);
+}, []);
+
   
   const [localUserInfo, setLocalUserInfo] = useState(userInfo);
   
@@ -450,7 +522,7 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
       return prev;
     });
     delete timeoutRefs.current[rowIndex];
-  }, 1800000); // 30 min rollback
+  }, 20000); // 20s rollback
   };
   
   useEffect(() => {
@@ -535,7 +607,12 @@ const CrosswordContainer = ({ puzzleId, userInfo, setScoreFromServer }) => {
 
 return (
     <div className='page-root'>
-      <div className="draw-center">
+      {inTimeRange ? 
+      <div>
+        <div style={{ textAlign: 'center', fontWeight: 'bold', margin: '10px' }}>
+          Thời gian còn lại: {formatTime(timeLeft)}
+        </div>
+        <div className="draw-center">
         <div className="card cp-card">
           <h2 className="cp-title">Crossword Completion Progress</h2>
 
@@ -619,7 +696,13 @@ return (
           </div>
         </div>
       </div>
-    </div>
+    </div> :
+
+      <div style={{ textAlign: 'center', color: 'red', fontWeight: 'bold', margin: '10px' }}>
+        Ngoài thời gian làm bài — hiện tại không thể nhập đáp án.
+      </div>
+  }
+  </div>
   );
 };
 
