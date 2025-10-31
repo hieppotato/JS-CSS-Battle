@@ -781,6 +781,55 @@ app.put("/minus-point", async (req, res) => {
   }
 });
 
+const SUPABASE_URL = (process.env.SUPABASE_URL || '').trim();
+const SERVICE_ROLE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+
+if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  console.error('Missing SUPABASE_URL or SERVICE_ROLE_KEY in .env');
+  process.exit(1);
+}
+
+app.post('/admin/change-password', async (req, res) => {
+  const { uid, newPassword } = req.body;
+  if (!uid || !newPassword) return res.status(400).json({ error: 'uid và newPassword là bắt buộc' });
+
+  const adminUrl = `${SUPABASE_URL}/auth/v1/admin/users/${uid}`;
+
+  console.log('Calling Supabase admin URL:', adminUrl, 'with PUT');
+
+  try {
+    const resp = await axios({
+      method: 'put',              // <-- đổi từ 'patch' sang 'put'
+      url: adminUrl,
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      data: { password: newPassword },
+      validateStatus: () => true, // để chúng ta xử lý mọi status code
+      timeout: 10000,
+    });
+
+    console.log('Supabase status:', resp.status);
+    console.log('Supabase headers:', resp.headers);
+    console.log('Supabase data:', resp.data);
+
+    if (resp.status >= 200 && resp.status < 300) {
+      return res.json({ message: 'Đổi mật khẩu thành công', status: resp.status, supabase: resp.data || null });
+    }
+
+    // Nếu Supabase trả lỗi (405, 4xx, 5xx...)
+    return res.status(resp.status).json({
+      error: 'Supabase returned error',
+      status: resp.status,
+      details: resp.data || null
+    });
+  } catch (err) {
+    console.error('Request failed:', err.message);
+    return res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
 app.get('/ping', (req,res)=>res.json({ok:true}));
 
 const PORT = process.env.PORT || 8000;

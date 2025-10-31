@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import "./home.css";
 import useProfileRealtime from "../../hooks/useProfileRealtime";
 
-const cssQuestions = ["1. LIGHTSABER", "2. THELOVELYTREE", "3. MYLILTREE", "4. SAKURA", "5. DARWIN", "6. FLOWER", "7. FUJI"];
+const cssQuestions = ["1. LIGHTSABER", "2. THELOVELYTREE", "3. MYLILTREE", "4. SAKURA", "5. DARWIN", "6. FLOWER", "7. FUJI", " NGÔI SAO HY VỌNG"];
 const TIMEOUT_MS = 1800000; // nếu realtime im lặng, rollback sau 15s
 
 const Home = ({ puzzles, userInfo, setUserInfo, setPuzzles }) => {
