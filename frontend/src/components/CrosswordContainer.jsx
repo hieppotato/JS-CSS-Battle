@@ -681,7 +681,7 @@ return (
             <div className="cp-footer">
               <div className="completed-count">Đã hoàn thành: <strong>{count}</strong></div>
 
-              {count > 1 && !disableInput && (
+              {count > 4 && !disableInput && (
                 <div className="vertical-guess-row">
                   <input
                     name="verticalGuess"

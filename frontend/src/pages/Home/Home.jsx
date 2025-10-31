@@ -5,7 +5,8 @@ import { useNavigate } from "react-router-dom";
 import "./home.css";
 import useProfileRealtime from "../../hooks/useProfileRealtime";
 
-const cssQuestions = ["1. LIGHTSABER", "2. THELOVELYTREE", "3. MYLILTREE", "4. SAKURA", "5. DARWIN", "6. FLOWER", "7. FUJI", " NGÔI SAO HY VỌNG"];
+const cssQuestions = [1, 2, 3, 4, 5, 6, 7, 8];
+const cssQuestions1 = ["1. LIGHTSABER", "2. THELOVELYTREE", "3. MYLILTREE", "4. SAKURA", "5. DARWIN", "6. FLOWER", "7. FUJI", " NGÔI SAO HY VỌNG"];
 const TIMEOUT_MS = 1800000; // nếu realtime im lặng, rollback sau 15s
 
 const Home = ({ puzzles, userInfo, setUserInfo, setPuzzles }) => {
@@ -165,37 +166,44 @@ const Home = ({ puzzles, userInfo, setUserInfo, setPuzzles }) => {
     <div className="home-container">
       <div className="home-sections">
         {/* ===== NỘP BÀI CSS ===== */}
-        <div className="css-section">
-          <h1 className="section-title">Nộp bài CSS</h1>
-          <div className="css-list">
-            {cssQuestions.map((id) => {
-              const submitted = isSubmittedFor(id);
-              const state = submitState[id] ?? "idle";
-              const isPending = state === "pending";
-              const isError = state === "error";
+          <div className="css-section">
+            <h1 className="section-title">Nộp bài CSS</h1>
+            <div className="css-list">
+              {cssQuestions.map((id, idx) => {
+                // lấy tên hiển thị tương ứng từ cssQuestions1 theo cùng index
+                // nếu không có, fallback về "Bài {id}"
+                const displayTitle =
+                  (Array.isArray(cssQuestions1) && cssQuestions1[idx]) || `Bài ${id}`;
 
-              return (
-                <div key={id} className="css-item">
-                  <div className="css-input-group">
-                    <label>Bài {id}</label>
+                const submitted = isSubmittedFor(id);
+                const state = submitState[id] ?? "idle";
+                const isPending = state === "pending";
+                const isError = state === "error";
+
+                return (
+                  <div key={id} className="css-item">
+                    <div className="css-input-group">
+                      {/* hiển thị tên bài, nhưng id submit vẫn là `id` */}
+                      <label className="css-title">{displayTitle}</label>
+                    </div>
+
+                    {!submitted && (
+                      <button
+                        onClick={() => handleSubmitCss(id)}
+                        disabled={isPending}
+                        className={`submit-btn ${isError ? "error" : ""}`}
+                      >
+                        {isPending ? "Đang nộp..." : isError ? "Lỗi, thử lại" : "Nộp"}
+                      </button>
+                    )}
+
+                    {submitted && <span className="submitted-label">Đã nộp</span>}
                   </div>
-
-                  {!submitted && (
-                    <button
-                      onClick={() => handleSubmitCss(id)}
-                      disabled={isPending}
-                      className={`submit-btn ${isError ? "error" : ""}`}
-                    >
-                      {isPending ? "Đang nộp..." : isError ? "Lỗi, thử lại" : "Nộp"}
-                    </button>
-                  )}
-
-                  {submitted && <span className="submitted-label">Đã nộp</span>}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+
 
         {/* ===== PUZZLE GAME ===== */}
         <div className="puzzle-section">
