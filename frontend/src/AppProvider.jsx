@@ -28,7 +28,7 @@ export const AppProvider = ({ children }) => {
       setLoadingPuzzles(true);
       try {
         const resp = await axiosInstance.get('/puzzles');
-        const list = Array.isArray(resp.data) ? resp.data : (resp.data?.puzzles || []);
+        const list = Array.isArray(resp.data) ? resp.data : (resp.data?.requests || []);
         // convert to map for O(1) lookup
         const map = {};
         list.forEach(p => {
