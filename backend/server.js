@@ -463,17 +463,14 @@ app.get("/puzzles/:id", async (req, res) => {
 });
 
 app.get('/chunk-dd12a0af', async (req, res) => {
+  // const { user } = req.body;
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase  
       .from('puzzles')
       .select('*')
       .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    const encrypted = encryptJson(data, process.env.ENCRYPT_SECRET);
-    res.json(encrypted);
-
+    if (error) { throw error; }
+    res.json(data);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

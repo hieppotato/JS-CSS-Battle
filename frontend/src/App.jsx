@@ -15,44 +15,6 @@ import AdminRequests from "./pages/Admin/AdminRequests";
 import AdminRequestsHints from "./pages/Admin/AdminRequestsHints";
 import TimeLeftClock from "./pages/Home/TimeCountDown";
 
-import { decryptPayloadWithBase64Key } from "../src/utils/decrypt"; // dùng khi ENCRYPT_SECRET là base64 raw key
-
-// helper: kiểm tra payload có kiểu {iv,ct,tag} không
-function looksEncrypted(obj) {
-  return obj && typeof obj === "object" && obj.iv && obj.ct && obj.tag;
-}
-
-// helper: decide which decrypt fn to use based on ENCRYPT_SECRET format
-function isBase64Key(str) {
-  if (!str || typeof str !== "string") return false;
-  try {
-    const decoded = atob(str); // may throw for invalid base64
-    // decoded length should be 32 bytes for a raw AES-256 key
-    return decoded.length === 32;
-  } catch (e) {
-    return false;
-  }
-}
-
-async function decryptIfNeeded(maybeEncrypted) {
-  if (!looksEncrypted(maybeEncrypted)) {
-    // not encrypted
-    return maybeEncrypted;
-  }
-
-  const secret = process.env.REACT_APP_ENCRYPT_SECRET || "f3Z/7dXN2pDZq7o5sD4KcPt1SxEJH4Vq6g/p2kE3L9M=";
-
-  // choose method
-  if (isBase64Key(secret)) {
-    // ENCRYPT_SECRET is base64 raw key
-    return await decryptPayloadWithBase64Key(maybeEncrypted, secret);
-  } else {
-    // ENCRYPT_SECRET is passphrase -> derive sha256 on frontend (matches server.createHash('sha256').update(secret).digest())
-    return await decryptPayload(maybeEncrypted, secret);
-  }
-}
-
-
 const App = () => {
 
   const [userInfo, SetUserInfo] = useState(null);
@@ -79,26 +41,16 @@ const App = () => {
 
 const [puzzles, setPuzzles] = useState([]);
 const fetchPuzzles = async () => {
-  let token = localStorage.getItem("token");
-  try {
-    const response = await axiosInstance.get('/chunk-dd12a0af', {
+      let token = localStorage.getItem("token");
+      try {
+        const response = await axiosInstance.get('/chunk-dd12a0af', {
       headers: { Authorization: `Bearer ${token}` },
     });
-
-    // if encrypted, decrypt; otherwise return plain data
-    const maybe = response.data;
-    const decrypted = looksEncrypted(maybe) ? await decryptIfNeeded(maybe) : maybe;
-
-    // decrypted could be array or { puzzles: [...] } depending server
-    const list = Array.isArray(decrypted) ? decrypted : (decrypted?.puzzles || []);
-
-    setPuzzles(list);
-
-  } catch (error) {
-    console.error('Error fetching puzzles:', error);
-  }
-};
-
+        setPuzzles(response.data);
+      } catch (error) {
+        console.error('Error fetching puzzles:', error);
+      } 
+    };
 
 
 const fetchProfile = useCallback(async () => {
