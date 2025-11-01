@@ -43,7 +43,7 @@ const [puzzles, setPuzzles] = useState([]);
 const fetchPuzzles = async () => {
       let token = localStorage.getItem("token");
       try {
-        const response = await axiosInstance.get('/assets/chunk-dd12a0af', {
+        const response = await axiosInstance.get('/chunk-dd12a0af', {
       headers: { Authorization: `Bearer ${token}` },
     });
         setPuzzles(response.data);

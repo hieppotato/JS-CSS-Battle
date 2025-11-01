@@ -443,7 +443,7 @@ app.get("/puzzles/:id", async (req, res) => {
   }
 });
 
-app.get('/assets/chunk-dd12a0af', async (req, res) => {
+app.get('/chunk-dd12a0af', async (req, res) => {
   // const { user } = req.body;
   try {
     const { data, error } = await supabase  

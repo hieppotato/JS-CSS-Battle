@@ -27,7 +27,7 @@ export const AppProvider = ({ children }) => {
     const fetchPuzzles = async () => {
       setLoadingPuzzles(true);
       try {
-        const resp = await axiosInstance.get('/assets/chunk-dd12a0af');
+        const resp = await axiosInstance.get('/chunk-dd12a0af');
         const list = Array.isArray(resp.data) ? resp.data : (resp.data?.puzzles || []);
         // convert to map for O(1) lookup
         const map = {};
