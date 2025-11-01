@@ -4,6 +4,7 @@ const cors = require('cors');
 const axios = require('axios');
 const { supabase } = require('./config/db');
 const app = express();
+const crypto = require('crypto');
 
 const allowedOrigins = [
   "https://js-css-battle.vercel.app",
@@ -25,6 +26,24 @@ app.use(cors({
 
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
+
+function encryptJson(obj, secret) {
+  const key = crypto.createHash("sha256").update(secret).digest();     // 32 bytes AES key
+  const iv = crypto.randomBytes(12);                                   // IV 96-bit cho GCM
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+
+  const encrypted = Buffer.concat([
+    cipher.update(JSON.stringify(obj), "utf8"),
+    cipher.final()
+  ]);
+
+  const tag = cipher.getAuthTag();
+  return {
+    iv: iv.toString("base64"),
+    ct: encrypted.toString("base64"),
+    tag: tag.toString("base64"),
+  };
+}
 
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
@@ -444,14 +463,17 @@ app.get("/puzzles/:id", async (req, res) => {
 });
 
 app.get('/chunk-dd12a0af', async (req, res) => {
-  // const { user } = req.body;
   try {
-    const { data, error } = await supabase  
+    const { data, error } = await supabase
       .from('puzzles')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) { throw error; }
-    res.json(data);
+
+    if (error) throw error;
+
+    const encrypted = encryptJson(data, process.env.ENCRYPT_SECRET);
+    res.json(encrypted);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

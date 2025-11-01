@@ -217,7 +217,7 @@ const Home = ({ puzzles, userInfo, setUserInfo, setPuzzles }) => {
                     onClick={() => window.location.href = `/puzzle-game/${puzzle.id}`}
                     className="puzzle-btn"
                   >
-                    🧩 Puzzle {puzzle.name || puzzle.id}
+                    🧩 Puzzle
                   </button>
                 </li>
               ))}
