@@ -670,7 +670,7 @@ app.post("/complete-vword", async (req, res) => {
     return res.json({
       already: false,
       points: Number(upd.data?.point ?? newPoint),
-      requests: upd.data?.puzzles ?? newPuzzles,
+      puzzles: upd.data?.puzzles ?? newPuzzles,
       message: 'Vertical word completed, points awarded'
     });
   } catch (err) {
